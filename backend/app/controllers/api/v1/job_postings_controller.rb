@@ -47,7 +47,7 @@ module Api
       private
 
       def set_job_posting
-        @job_posting = JobPosting.find(params[:id])
+        @job_posting = JobPosting.includes(:company).find(params[:id])
       end
 
       def authorize_owner!
