@@ -2,6 +2,7 @@ module Api
   module V1
     class InternsController < ApplicationController
       before_action :authenticate_request!
+      before_action :authorize_company!, only: %i[index show]
       before_action :set_intern, only: %i[show update]
       before_action :authorize_self!, only: %i[update]
 
@@ -28,6 +29,10 @@ module Api
 
       def set_intern
         @intern = Intern.find(params[:id])
+      end
+
+      def authorize_company!
+        render_unauthorized unless current_account.is_a?(Company)
       end
 
       def authorize_self!

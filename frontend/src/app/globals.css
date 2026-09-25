@@ -6,8 +6,8 @@
   --accent-dark: #0f8fc4;
   --accent-soft: #e6f6fd;
   --border: #dce9f2;
-  --muted: #6b7c8c;
-  --danger: #e0483a;
+  --muted: #55677a;
+  --danger: #c8342a;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -16,7 +16,7 @@
     --surface: #121e2c;
     --foreground: #eaf2f8;
     --border: #223245;
-    --muted: #93a4b5;
+    --muted: #a7b7c6;
     --accent-soft: #16303f;
   }
 }
@@ -51,6 +51,15 @@ body {
 a {
   color: inherit;
   text-decoration: none;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--accent-dark);
+  outline-offset: 2px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -182,8 +191,13 @@ select {
 input:focus,
 textarea:focus,
 select:focus {
-  outline: none;
   border-color: var(--accent);
+}
+
+input:focus:not(:focus-visible),
+textarea:focus:not(:focus-visible),
+select:focus:not(:focus-visible) {
+  outline: none;
 }
 
 textarea {
@@ -314,7 +328,7 @@ button[type="submit"]:disabled {
 .tag.tag-outline {
   background: transparent;
   border: 1px solid var(--border);
-  color: var(--muted);
+  color: var(--foreground);
 }
 
 .hero {

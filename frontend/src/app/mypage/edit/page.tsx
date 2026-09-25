@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, FormEvent } from "react";
+import { useEffect, useRef, useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { updateInternProfile, ApiError, Intern } from "@/lib/api";
@@ -41,6 +41,13 @@ function EditProfileForm({ intern }: { intern: Intern }) {
   const [errors, setErrors] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [saved, setSaved] = useState(false);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -59,12 +66,14 @@ function EditProfileForm({ intern }: { intern: Intern }) {
         desired_location: desiredLocation,
         desired_job_type: desiredJobType,
       });
+      if (!mountedRef.current) return;
       updateAccount(updated);
       setSaved(true);
     } catch (err) {
+      if (!mountedRef.current) return;
       setErrors(err instanceof ApiError ? err.errors : ["更新に失敗しました"]);
     } finally {
-      setSubmitting(false);
+      if (mountedRef.current) setSubmitting(false);
     }
   };
 
