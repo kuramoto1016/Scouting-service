@@ -4,6 +4,8 @@ import { useEffect, useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { updateInternProfile, ApiError, Intern } from "@/lib/api";
+import { SkillPicker } from "@/components/SkillPicker";
+import { JobTypePicker } from "@/components/JobTypePicker";
 
 export default function EditProfilePage() {
   const { token, accountType, account, loading } = useAuth();
@@ -69,7 +71,7 @@ function EditProfileForm({ intern }: { intern: Intern }) {
   return (
     <div>
       <h1 className="page-title">プロフィール編集</h1>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} className="form-wide">
         <label>
           氏名
           <input value={name} onChange={(e) => setName(e.target.value)} required />
@@ -91,12 +93,8 @@ function EditProfileForm({ intern }: { intern: Intern }) {
           <input value={grade} onChange={(e) => setGrade(e.target.value)} placeholder="例: 3年" />
         </label>
         <label>
-          スキル・使用可能言語（カンマ区切り）
-          <input
-            value={skills}
-            onChange={(e) => setSkills(e.target.value)}
-            placeholder="例: Ruby, TypeScript, React"
-          />
+          スキル・使用可能言語
+          <SkillPicker value={skills} onChange={setSkills} />
         </label>
         <label>
           希望勤務地
@@ -108,11 +106,7 @@ function EditProfileForm({ intern }: { intern: Intern }) {
         </label>
         <label>
           希望職種
-          <input
-            value={desiredJobType}
-            onChange={(e) => setDesiredJobType(e.target.value)}
-            placeholder="例: バックエンドエンジニア"
-          />
+          <JobTypePicker value={desiredJobType} onChange={setDesiredJobType} />
         </label>
         {errors.length > 0 && (
           <div className="error-text">

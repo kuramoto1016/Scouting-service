@@ -1,12 +1,17 @@
 import { Intern } from "@/lib/api";
 
-export function InternProfileDetails({ intern }: { intern: Intern }) {
-  const skillList = intern.skills
-    ? intern.skills
+function splitTags(value: string | null): string[] {
+  return value
+    ? value
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean)
     : [];
+}
+
+export function InternProfileDetails({ intern }: { intern: Intern }) {
+  const skillList = splitTags(intern.skills);
+  const jobTypeList = splitTags(intern.desired_job_type);
 
   return (
     <div>
@@ -25,11 +30,18 @@ export function InternProfileDetails({ intern }: { intern: Intern }) {
           ))}
         </div>
       )}
-      {(intern.desired_location || intern.desired_job_type) && (
+      {jobTypeList.length > 0 && (
+        <div className="tag-list" style={{ marginTop: "0.3rem" }}>
+          {jobTypeList.map((jobType) => (
+            <span key={jobType} className="tag tag-outline">
+              {jobType}
+            </span>
+          ))}
+        </div>
+      )}
+      {intern.desired_location && (
         <p className="card-meta" style={{ marginTop: "0.5rem" }}>
-          {intern.desired_job_type && `希望職種: ${intern.desired_job_type}`}
-          {intern.desired_job_type && intern.desired_location && " / "}
-          {intern.desired_location && `希望勤務地: ${intern.desired_location}`}
+          希望勤務地: {intern.desired_location}
         </p>
       )}
     </div>

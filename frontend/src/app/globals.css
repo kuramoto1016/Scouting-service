@@ -155,6 +155,10 @@ form {
   max-width: 420px;
 }
 
+form.form-wide {
+  max-width: 560px;
+}
+
 label {
   display: flex;
   flex-direction: column;
@@ -307,6 +311,12 @@ button[type="submit"]:disabled {
   font-weight: 600;
 }
 
+.tag.tag-outline {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
 .hero {
   background: linear-gradient(135deg, var(--accent-soft), var(--surface));
   border: 1px solid var(--border);
@@ -316,5 +326,57 @@ button[type="submit"]:disabled {
 }
 
 .hero .page-title {
+  color: var(--accent-dark);
+}
+
+.skill-picker-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.skill-chip {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--foreground);
+  border-radius: 999px;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.skill-chip:hover {
+  border-color: var(--accent);
+}
+
+.skill-chip.selected {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+.skill-picker-custom {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+
+.skill-picker-custom input {
+  flex: 1;
+}
+
+.skill-picker-custom button {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 0.5rem 0.9rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: inherit;
+}
+
+.skill-picker-custom button:hover {
+  border-color: var(--accent);
   color: var(--accent-dark);
 }
