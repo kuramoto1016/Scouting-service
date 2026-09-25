@@ -19,13 +19,7 @@ const SUGGESTED_JOB_TYPES = [
 export const JobTypePicker = forwardRef<TagPickerHandle, { value: string; onChange: (value: string) => void }>(
   function JobTypePicker({ value, onChange }, ref) {
     return (
-      <TagPicker
-        ref={ref}
-        value={value}
-        onChange={onChange}
-        suggestions={SUGGESTED_JOB_TYPES}
-        customPlaceholder="その他の希望職種を入力してEnter"
-      />
+      <TagPicker ref={ref} value={value} onChange={onChange} suggestions={SUGGESTED_JOB_TYPES} allowCustom={false} />
     );
   }
 );

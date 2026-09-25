@@ -12,7 +12,8 @@ function parseTags(value: string): string[] {
 export interface TagPickerHandle {
   /**
    * Commits any text left in the custom-input box into the selected tags
-   * and returns the resulting comma-separated value.
+   * and returns the resulting comma-separated value. No-op when custom
+   * input is disabled.
    */
   commitPendingInput: () => string;
 }
@@ -23,9 +24,11 @@ export const TagPicker = forwardRef<
     value: string;
     onChange: (value: string) => void;
     suggestions: string[];
-    customPlaceholder: string;
+    /** Set to false to restrict selection to `suggestions` only. Defaults to true. */
+    allowCustom?: boolean;
+    customPlaceholder?: string;
   }
->(function TagPicker({ value, onChange, suggestions, customPlaceholder }, ref) {
+>(function TagPicker({ value, onChange, suggestions, allowCustom = true, customPlaceholder }, ref) {
   const selected = useMemo(() => parseTags(value), [value]);
   const [customInput, setCustomInput] = useState("");
 
@@ -46,6 +49,7 @@ export const TagPicker = forwardRef<
 
   useImperativeHandle(ref, () => ({
     commitPendingInput: () => {
+      if (!allowCustom) return value;
       const tag = customInput.trim();
       if (!tag || selected.includes(tag)) {
         setCustomInput("");
@@ -87,7 +91,7 @@ export const TagPicker = forwardRef<
         ))}
       </div>
 
-      {customTags.length > 0 && (
+      {allowCustom && customTags.length > 0 && (
         <div className="skill-picker-suggestions" style={{ marginTop: "0.5rem" }}>
           {customTags.map((tag) => (
             <button key={tag} type="button" className="skill-chip selected" onClick={() => removeTag(tag)}>
@@ -97,18 +101,20 @@ export const TagPicker = forwardRef<
         </div>
       )}
 
-      <div className="skill-picker-custom">
-        <input
-          value={customInput}
-          onChange={(e) => setCustomInput(e.target.value)}
-          onKeyDown={handleCustomKeyDown}
-          placeholder={customPlaceholder}
-          aria-label={customPlaceholder}
-        />
-        <button type="button" onClick={addCustomTag}>
-          追加
-        </button>
-      </div>
+      {allowCustom && (
+        <div className="skill-picker-custom">
+          <input
+            value={customInput}
+            onChange={(e) => setCustomInput(e.target.value)}
+            onKeyDown={handleCustomKeyDown}
+            placeholder={customPlaceholder}
+            aria-label={customPlaceholder}
+          />
+          <button type="button" onClick={addCustomTag}>
+            追加
+          </button>
+        </div>
+      )}
     </div>
   );
 });

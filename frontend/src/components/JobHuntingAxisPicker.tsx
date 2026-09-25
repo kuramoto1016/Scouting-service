@@ -21,12 +21,6 @@ export const JobHuntingAxisPicker = forwardRef<
   { value: string; onChange: (value: string) => void }
 >(function JobHuntingAxisPicker({ value, onChange }, ref) {
   return (
-    <TagPicker
-      ref={ref}
-      value={value}
-      onChange={onChange}
-      suggestions={SUGGESTED_AXES}
-      customPlaceholder="その他の軸を入力してEnter"
-    />
+    <TagPicker ref={ref} value={value} onChange={onChange} suggestions={SUGGESTED_AXES} allowCustom={false} />
   );
 });
