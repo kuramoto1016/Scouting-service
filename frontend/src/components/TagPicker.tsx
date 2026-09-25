@@ -63,7 +63,8 @@ export const TagPicker = forwardRef<
   };
 
   const handleCustomKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
+    // IME変換確定のEnterでは追加しない（keyCode 229 は古いブラウザ向けの保険）
+    if (e.key === "Enter" && !e.nativeEvent.isComposing && e.nativeEvent.keyCode !== 229) {
       e.preventDefault();
       addCustomTag();
     }
