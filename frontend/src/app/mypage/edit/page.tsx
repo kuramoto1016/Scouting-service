@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { updateInternProfile, ApiError, Intern } from "@/lib/api";
 import { SkillPicker } from "@/components/SkillPicker";
 import { JobTypePicker } from "@/components/JobTypePicker";
+import { TagPickerHandle } from "@/components/TagPicker";
 
 export default function EditProfilePage() {
   const { token, accountType, account, loading } = useAuth();
@@ -42,8 +43,11 @@ function EditProfileForm({ intern }: { intern: Intern }) {
   const [submitting, setSubmitting] = useState(false);
   const [saved, setSaved] = useState(false);
   const mountedRef = useRef(true);
+  const skillPickerRef = useRef<TagPickerHandle>(null);
+  const jobTypePickerRef = useRef<TagPickerHandle>(null);
 
   useEffect(() => {
+    mountedRef.current = true;
     return () => {
       mountedRef.current = false;
     };
@@ -55,6 +59,9 @@ function EditProfileForm({ intern }: { intern: Intern }) {
     setErrors([]);
     setSaved(false);
     setSubmitting(true);
+    // 入力欄に未確定のテキストが残っていれば、送信前にタグとして確定させる
+    const committedSkills = skillPickerRef.current?.commitPendingInput() ?? skills;
+    const committedJobType = jobTypePickerRef.current?.commitPendingInput() ?? desiredJobType;
     try {
       const updated = await updateInternProfile(token, intern.id, {
         name,
@@ -62,9 +69,9 @@ function EditProfileForm({ intern }: { intern: Intern }) {
         university,
         faculty,
         grade,
-        skills,
+        skills: committedSkills,
         desired_location: desiredLocation,
-        desired_job_type: desiredJobType,
+        desired_job_type: committedJobType,
       });
       if (!mountedRef.current) return;
       updateAccount(updated);
@@ -101,10 +108,10 @@ function EditProfileForm({ intern }: { intern: Intern }) {
           学年
           <input value={grade} onChange={(e) => setGrade(e.target.value)} placeholder="例: 3年" />
         </label>
-        <label>
-          スキル・使用可能言語
-          <SkillPicker value={skills} onChange={setSkills} />
-        </label>
+        <fieldset className="picker-fieldset">
+          <legend>スキル・使用可能言語</legend>
+          <SkillPicker ref={skillPickerRef} value={skills} onChange={setSkills} />
+        </fieldset>
         <label>
           希望勤務地
           <input
@@ -113,10 +120,10 @@ function EditProfileForm({ intern }: { intern: Intern }) {
             placeholder="例: 東京都・リモート可"
           />
         </label>
-        <label>
-          希望職種
-          <JobTypePicker value={desiredJobType} onChange={setDesiredJobType} />
-        </label>
+        <fieldset className="picker-fieldset">
+          <legend>希望職種</legend>
+          <JobTypePicker ref={jobTypePickerRef} value={desiredJobType} onChange={setDesiredJobType} />
+        </fieldset>
         {errors.length > 0 && (
           <div className="error-text">
             {errors.map((e) => (

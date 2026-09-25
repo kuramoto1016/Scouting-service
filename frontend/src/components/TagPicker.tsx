@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, KeyboardEvent } from "react";
+import { useState, useMemo, useImperativeHandle, forwardRef, KeyboardEvent } from "react";
 
 function parseTags(value: string): string[] {
   return value
@@ -9,17 +9,23 @@ function parseTags(value: string): string[] {
     .filter(Boolean);
 }
 
-export function TagPicker({
-  value,
-  onChange,
-  suggestions,
-  customPlaceholder,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  suggestions: string[];
-  customPlaceholder: string;
-}) {
+export interface TagPickerHandle {
+  /**
+   * Commits any text left in the custom-input box into the selected tags
+   * and returns the resulting comma-separated value.
+   */
+  commitPendingInput: () => string;
+}
+
+export const TagPicker = forwardRef<
+  TagPickerHandle,
+  {
+    value: string;
+    onChange: (value: string) => void;
+    suggestions: string[];
+    customPlaceholder: string;
+  }
+>(function TagPicker({ value, onChange, suggestions, customPlaceholder }, ref) {
   const selected = useMemo(() => parseTags(value), [value]);
   const [customInput, setCustomInput] = useState("");
 
@@ -37,6 +43,20 @@ export function TagPicker({
     onChange([...selected, tag].join(", "));
     setCustomInput("");
   };
+
+  useImperativeHandle(ref, () => ({
+    commitPendingInput: () => {
+      const tag = customInput.trim();
+      if (!tag || selected.includes(tag)) {
+        setCustomInput("");
+        return value;
+      }
+      const next = [...selected, tag].join(", ");
+      onChange(next);
+      setCustomInput("");
+      return next;
+    },
+  }));
 
   const removeTag = (tag: string) => {
     onChange(selected.filter((s) => s !== tag).join(", "));
@@ -82,6 +102,7 @@ export function TagPicker({
           onChange={(e) => setCustomInput(e.target.value)}
           onKeyDown={handleCustomKeyDown}
           placeholder={customPlaceholder}
+          aria-label={customPlaceholder}
         />
         <button type="button" onClick={addCustomTag}>
           追加
@@ -89,4 +110,4 @@ export function TagPicker({
       </div>
     </div>
   );
-}
+});

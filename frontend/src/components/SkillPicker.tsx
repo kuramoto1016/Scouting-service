@@ -1,6 +1,7 @@
 "use client";
 
-import { TagPicker } from "./TagPicker";
+import { forwardRef } from "react";
+import { TagPicker, TagPickerHandle } from "./TagPicker";
 
 const SUGGESTED_SKILLS = [
   "Ruby",
@@ -21,13 +22,16 @@ const SUGGESTED_SKILLS = [
   "SQL",
 ];
 
-export function SkillPicker({ value, onChange }: { value: string; onChange: (value: string) => void }) {
-  return (
-    <TagPicker
-      value={value}
-      onChange={onChange}
-      suggestions={SUGGESTED_SKILLS}
-      customPlaceholder="その他のスキルを入力してEnter"
-    />
-  );
-}
+export const SkillPicker = forwardRef<TagPickerHandle, { value: string; onChange: (value: string) => void }>(
+  function SkillPicker({ value, onChange }, ref) {
+    return (
+      <TagPicker
+        ref={ref}
+        value={value}
+        onChange={onChange}
+        suggestions={SUGGESTED_SKILLS}
+        customPlaceholder="その他のスキルを入力してEnter"
+      />
+    );
+  }
+);
