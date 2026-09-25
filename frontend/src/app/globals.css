@@ -2,8 +2,13 @@
   --background: #f5f9ff;
   --surface: #ffffff;
   --foreground: #1c2733;
-  --accent: #1ba7e0;
-  --accent-dark: #0f8fc4;
+  /* --accent / --accent-dark are button backgrounds that carry white text
+     (need >= 4.5:1 against white). --accent-text is for accent-colored text
+     on light surfaces (--surface / --accent-soft), which needs its own,
+     darker value to also clear 4.5:1. */
+  --accent: #08688f;
+  --accent-dark: #054a66;
+  --accent-text: #066083;
   --accent-soft: #e6f6fd;
   --border: #dce9f2;
   --muted: #55677a;
@@ -19,6 +24,9 @@
     --muted: #a7b7c6;
     --accent-soft: #16303f;
     --danger: #ff6b60;
+    /* Dark backgrounds are dark enough that the original bright accent
+       clears 4.5:1 as text, so reuse it instead of the light-mode value. */
+    --accent-text: #1ba7e0;
   }
 }
 
@@ -55,7 +63,7 @@ a {
 }
 
 a.link-accent {
-  color: var(--accent-dark);
+  color: var(--accent-text);
   font-weight: 600;
   font-size: 0.85rem;
 }
@@ -94,7 +102,7 @@ select:focus-visible {
 .navbar-brand {
   font-weight: bold;
   font-size: 1.15rem;
-  color: var(--accent-dark);
+  color: var(--accent-text);
 }
 
 .navbar-links {
@@ -159,7 +167,7 @@ a.card:hover {
 .card-title {
   font-weight: bold;
   margin-bottom: 0.25rem;
-  color: var(--accent-dark);
+  color: var(--accent-text);
 }
 
 .card-meta {
@@ -344,7 +352,7 @@ button[type="submit"]:disabled {
 .tag {
   display: inline-block;
   background: var(--accent-soft);
-  color: var(--accent-dark);
+  color: var(--accent-text);
   border-radius: 999px;
   padding: 0.2rem 0.7rem;
   font-size: 0.8rem;
@@ -360,7 +368,7 @@ button[type="submit"]:disabled {
 .tag.tag-axis {
   background: transparent;
   border: 1px solid var(--accent);
-  color: var(--accent-dark);
+  color: var(--accent-text);
 }
 
 .hero {
@@ -372,7 +380,7 @@ button[type="submit"]:disabled {
 }
 
 .hero .page-title {
-  color: var(--accent-dark);
+  color: var(--accent-text);
 }
 
 .skill-picker-suggestions {
@@ -424,5 +432,5 @@ button[type="submit"]:disabled {
 
 .skill-picker-custom button:hover {
   border-color: var(--accent);
-  color: var(--accent-dark);
+  color: var(--accent-text);
 }

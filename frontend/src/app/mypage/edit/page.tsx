@@ -83,7 +83,7 @@ function EditProfileForm({ intern }: { intern: Intern }) {
         job_hunting_axes: committedAxes,
       });
       if (!mountedRef.current) return;
-      updateAccount(updated);
+      updateAccount(updated, token);
       setSaved(true);
     } catch (err) {
       if (!mountedRef.current) return;
