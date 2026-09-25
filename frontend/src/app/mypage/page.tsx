@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { fetchConversations, Intern, Company } from "@/lib/api";
+import { InternProfileDetails } from "@/components/InternProfileDetails";
 
 export default function MyPage() {
   const { token, accountType, account, loading } = useAuth();
@@ -36,11 +37,21 @@ export default function MyPage() {
       <div className="card">
         <div className="card-title">{account?.name}</div>
         <div className="card-meta">{account?.email}</div>
-        {"description" in (account ?? {}) && (account as Company).description && (
+        {accountType === "company" && (account as Company).description && (
           <p>{(account as Company).description}</p>
         )}
-        {"bio" in (account ?? {}) && (account as Intern).bio && <p>{(account as Intern).bio}</p>}
+        {accountType === "intern" && (
+          <InternProfileDetails intern={account as Intern} />
+        )}
       </div>
+
+      {accountType === "intern" && (
+        <div style={{ margin: "1rem 0" }}>
+          <Link href="/mypage/edit" className="btn-primary">
+            プロフィールを編集する
+          </Link>
+        </div>
+      )}
 
       {accountType === "company" && (
         <div style={{ margin: "1rem 0" }}>

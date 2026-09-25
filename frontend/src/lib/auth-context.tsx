@@ -13,6 +13,7 @@ interface AuthState {
 interface AuthContextValue extends AuthState {
   signIn: (token: string, accountType: AccountType, account: Intern | Company) => void;
   signOut: () => void;
+  updateAccount: (account: Intern | Company) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -63,8 +64,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setState({ token: null, accountType: null, account: null, loading: false });
   }, []);
 
+  const updateAccount = useCallback((account: Intern | Company) => {
+    setState((s) => ({ ...s, account }));
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ ...state, signIn, signOut }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ ...state, signIn, signOut, updateAccount }}>
+      {children}
+    </AuthContext.Provider>
   );
 }
 

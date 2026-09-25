@@ -7,6 +7,23 @@ export interface Intern {
   name: string;
   email: string;
   bio: string | null;
+  university: string | null;
+  faculty: string | null;
+  grade: string | null;
+  skills: string | null;
+  desired_location: string | null;
+  desired_job_type: string | null;
+}
+
+export interface InternProfileInput {
+  name: string;
+  bio: string;
+  university: string;
+  faculty: string;
+  grade: string;
+  skills: string;
+  desired_location: string;
+  desired_job_type: string;
 }
 
 export interface Company {
@@ -110,6 +127,18 @@ export function fetchMe(token: string) {
 
 export function fetchInterns(token: string) {
   return request<Intern[]>("/api/v1/interns", { token });
+}
+
+export function fetchIntern(token: string, id: number) {
+  return request<Intern>(`/api/v1/interns/${id}`, { token });
+}
+
+export function updateInternProfile(token: string, id: number, params: Partial<InternProfileInput>) {
+  return request<Intern>(`/api/v1/interns/${id}`, {
+    method: "PATCH",
+    token,
+    body: JSON.stringify({ intern: params }),
+  });
 }
 
 export function fetchConversations(token: string) {

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { fetchInterns, Intern } from "@/lib/api";
+import { InternProfileDetails } from "@/components/InternProfileDetails";
 
 export default function InternsListPage() {
   const { token, accountType, loading } = useAuth();
@@ -42,7 +43,7 @@ export default function InternsListPage() {
         <div key={intern.id} className="card">
           <div className="card-title">{intern.name}</div>
           <div className="card-meta">{intern.email}</div>
-          {intern.bio && <p style={{ marginBottom: "0.5rem" }}>{intern.bio}</p>}
+          <InternProfileDetails intern={intern} />
           <Link href={`/messages/intern/${intern.id}`}>メッセージを送る</Link>
         </div>
       ))}

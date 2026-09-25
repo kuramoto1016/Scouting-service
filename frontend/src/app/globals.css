@@ -1,18 +1,23 @@
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --accent: #2563eb;
-  --border: #e5e7eb;
-  --muted: #6b7280;
-  --danger: #dc2626;
+  --background: #f5f9ff;
+  --surface: #ffffff;
+  --foreground: #1c2733;
+  --accent: #1ba7e0;
+  --accent-dark: #0f8fc4;
+  --accent-soft: #e6f6fd;
+  --border: #dce9f2;
+  --muted: #6b7c8c;
+  --danger: #e0483a;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-    --border: #27272a;
-    --muted: #a1a1aa;
+    --background: #0b1420;
+    --surface: #121e2c;
+    --foreground: #eaf2f8;
+    --border: #223245;
+    --muted: #93a4b5;
+    --accent-soft: #16303f;
   }
 }
 
@@ -32,7 +37,7 @@ body {
   flex-direction: column;
   color: var(--foreground);
   background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -59,14 +64,17 @@ a {
   align-items: center;
   justify-content: space-between;
   padding: 1rem 1.5rem;
+  background: var(--surface);
   border-bottom: 1px solid var(--border);
+  box-shadow: 0 1px 3px rgba(27, 167, 224, 0.08);
   flex-wrap: wrap;
   gap: 0.75rem;
 }
 
 .navbar-brand {
   font-weight: bold;
-  font-size: 1.1rem;
+  font-size: 1.15rem;
+  color: var(--accent-dark);
 }
 
 .navbar-links {
@@ -85,9 +93,14 @@ a {
   cursor: pointer;
   background: none;
   border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 0.4rem 0.8rem;
+  border-radius: 999px;
+  padding: 0.4rem 0.9rem;
   color: inherit;
+  transition: background-color 0.15s ease;
+}
+
+.navbar-links button:hover {
+  background: var(--accent-soft);
 }
 
 .navbar-account {
@@ -109,15 +122,24 @@ a {
 }
 
 .card {
+  background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 1rem 1.25rem;
-  margin-bottom: 0.75rem;
+  border-radius: 12px;
+  padding: 1.1rem 1.3rem;
+  margin-bottom: 0.85rem;
+  box-shadow: 0 2px 8px rgba(27, 167, 224, 0.06);
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+a.card:hover {
+  box-shadow: 0 4px 14px rgba(27, 167, 224, 0.14);
+  transform: translateY(-1px);
 }
 
 .card-title {
   font-weight: bold;
   margin-bottom: 0.25rem;
+  color: var(--accent-dark);
 }
 
 .card-meta {
@@ -144,12 +166,20 @@ input,
 textarea,
 select {
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 8px;
   padding: 0.55rem 0.7rem;
   font-size: 0.95rem;
-  background: transparent;
+  background: var(--surface);
   color: inherit;
   font-family: inherit;
+  transition: border-color 0.15s ease;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--accent);
 }
 
 textarea {
@@ -162,11 +192,18 @@ button[type="submit"],
   background: var(--accent);
   color: white;
   border: none;
-  border-radius: 6px;
-  padding: 0.6rem 1rem;
+  border-radius: 999px;
+  padding: 0.65rem 1.4rem;
   font-size: 0.95rem;
+  font-weight: bold;
   cursor: pointer;
   width: fit-content;
+  transition: background-color 0.15s ease;
+}
+
+button[type="submit"]:hover:not(:disabled),
+.btn-primary:hover {
+  background: var(--accent-dark);
 }
 
 button[type="submit"]:disabled {
@@ -195,9 +232,10 @@ button[type="submit"]:disabled {
 }
 
 .message-bubble {
-  border-radius: 10px;
+  border-radius: 14px;
   padding: 0.6rem 0.9rem;
   max-width: 75%;
+  background: var(--surface);
   border: 1px solid var(--border);
 }
 
@@ -239,14 +277,44 @@ button[type="submit"]:disabled {
   flex: 1;
   padding: 0.5rem;
   border: 1px solid var(--border);
-  border-radius: 6px;
-  background: transparent;
+  border-radius: 999px;
+  background: var(--surface);
   color: inherit;
   cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .account-type-toggle button.active {
   background: var(--accent);
   color: white;
   border-color: var(--accent);
+}
+
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.3rem;
+}
+
+.tag {
+  display: inline-block;
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+  border-radius: 999px;
+  padding: 0.2rem 0.7rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.hero {
+  background: linear-gradient(135deg, var(--accent-soft), var(--surface));
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 2.5rem 2rem;
+  margin-bottom: 2rem;
+}
+
+.hero .page-title {
+  color: var(--accent-dark);
 }
