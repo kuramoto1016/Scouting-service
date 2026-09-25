@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { updateInternProfile, ApiError, Intern } from "@/lib/api";
 import { SkillPicker } from "@/components/SkillPicker";
 import { JobTypePicker } from "@/components/JobTypePicker";
+import { JobHuntingAxisPicker } from "@/components/JobHuntingAxisPicker";
 import { TagPickerHandle } from "@/components/TagPicker";
 
 export default function EditProfilePage() {
@@ -41,12 +42,14 @@ function EditProfileForm({ intern }: { intern: Intern }) {
   const [desiredJobType, setDesiredJobType] = useState(intern.desired_job_type ?? "");
   const [portfolioUrl, setPortfolioUrl] = useState(intern.portfolio_url ?? "");
   const [careerGoal, setCareerGoal] = useState(intern.career_goal ?? "");
+  const [jobHuntingAxes, setJobHuntingAxes] = useState(intern.job_hunting_axes ?? "");
   const [errors, setErrors] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [saved, setSaved] = useState(false);
   const mountedRef = useRef(true);
   const skillPickerRef = useRef<TagPickerHandle>(null);
   const jobTypePickerRef = useRef<TagPickerHandle>(null);
+  const jobHuntingAxisPickerRef = useRef<TagPickerHandle>(null);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -64,6 +67,7 @@ function EditProfileForm({ intern }: { intern: Intern }) {
     // 入力欄に未確定のテキストが残っていれば、送信前にタグとして確定させる
     const committedSkills = skillPickerRef.current?.commitPendingInput() ?? skills;
     const committedJobType = jobTypePickerRef.current?.commitPendingInput() ?? desiredJobType;
+    const committedAxes = jobHuntingAxisPickerRef.current?.commitPendingInput() ?? jobHuntingAxes;
     try {
       const updated = await updateInternProfile(token, intern.id, {
         name,
@@ -76,6 +80,7 @@ function EditProfileForm({ intern }: { intern: Intern }) {
         desired_job_type: committedJobType,
         portfolio_url: portfolioUrl,
         career_goal: careerGoal,
+        job_hunting_axes: committedAxes,
       });
       if (!mountedRef.current) return;
       updateAccount(updated);
@@ -145,6 +150,10 @@ function EditProfileForm({ intern }: { intern: Intern }) {
             placeholder="例: 将来はバックエンドエンジニアとしてサービス開発に携わりたい"
           />
         </label>
+        <fieldset className="picker-fieldset">
+          <legend>就活の軸（企業選びで重視すること）</legend>
+          <JobHuntingAxisPicker ref={jobHuntingAxisPickerRef} value={jobHuntingAxes} onChange={setJobHuntingAxes} />
+        </fieldset>
         {errors.length > 0 && (
           <div className="error-text">
             {errors.map((e) => (

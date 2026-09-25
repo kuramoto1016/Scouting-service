@@ -12,6 +12,7 @@ function splitTags(value: string | null): string[] {
 export function InternProfileDetails({ intern }: { intern: Intern }) {
   const skillList = splitTags(intern.skills);
   const jobTypeList = splitTags(intern.desired_job_type);
+  const axisList = splitTags(intern.job_hunting_axes);
 
   return (
     <div>
@@ -40,6 +41,15 @@ export function InternProfileDetails({ intern }: { intern: Intern }) {
           {jobTypeList.map((jobType) => (
             <span key={jobType} className="tag tag-outline">
               {jobType}
+            </span>
+          ))}
+        </div>
+      )}
+      {axisList.length > 0 && (
+        <div className="tag-list" style={{ marginTop: "0.3rem" }}>
+          {axisList.map((axis) => (
+            <span key={axis} className="tag tag-axis">
+              {axis}
             </span>
           ))}
         </div>

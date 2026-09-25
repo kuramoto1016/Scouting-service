@@ -8,7 +8,7 @@ module Api
 
       PROFILE_FIELDS = %i[
         id name email bio university faculty grade skills desired_location desired_job_type
-        portfolio_url career_goal
+        portfolio_url career_goal job_hunting_axes
       ].freeze
 
       def index
@@ -45,7 +45,7 @@ module Api
       def intern_params
         params.require(:intern).permit(
           :name, :bio, :university, :faculty, :grade, :skills, :desired_location, :desired_job_type,
-          :portfolio_url, :career_goal
+          :portfolio_url, :career_goal, :job_hunting_axes
         )
       end
     end

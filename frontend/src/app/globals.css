@@ -357,6 +357,12 @@ button[type="submit"]:disabled {
   color: var(--foreground);
 }
 
+.tag.tag-axis {
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent-dark);
+}
+
 .hero {
   background: linear-gradient(135deg, var(--accent-soft), var(--surface));
   border: 1px solid var(--border);

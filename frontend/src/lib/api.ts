@@ -15,6 +15,7 @@ export interface Intern {
   desired_job_type: string | null;
   portfolio_url: string | null;
   career_goal: string | null;
+  job_hunting_axes: string | null;
 }
 
 export interface InternProfileInput {
@@ -28,6 +29,7 @@ export interface InternProfileInput {
   desired_job_type: string;
   portfolio_url: string;
   career_goal: string;
+  job_hunting_axes: string;
 }
 
 export interface Company {
