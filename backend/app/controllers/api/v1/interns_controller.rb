@@ -6,7 +6,10 @@ module Api
       before_action :set_intern, only: %i[show update]
       before_action :authorize_self!, only: %i[update]
 
-      PROFILE_FIELDS = %i[id name email bio university faculty grade skills desired_location desired_job_type].freeze
+      PROFILE_FIELDS = %i[
+        id name email bio university faculty grade skills desired_location desired_job_type
+        portfolio_url career_goal
+      ].freeze
 
       def index
         interns = Intern.order(:name)
@@ -41,7 +44,8 @@ module Api
 
       def intern_params
         params.require(:intern).permit(
-          :name, :bio, :university, :faculty, :grade, :skills, :desired_location, :desired_job_type
+          :name, :bio, :university, :faculty, :grade, :skills, :desired_location, :desired_job_type,
+          :portfolio_url, :career_goal
         )
       end
     end

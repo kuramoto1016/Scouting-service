@@ -54,6 +54,16 @@ a {
   text-decoration: none;
 }
 
+a.link-accent {
+  color: var(--accent-dark);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+a.link-accent:hover {
+  text-decoration: underline;
+}
+
 a:focus-visible,
 button:focus-visible,
 input:focus-visible,

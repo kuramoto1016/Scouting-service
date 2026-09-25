@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_25_014012) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_25_063231) do
   create_table "companies", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.text "description"
@@ -23,6 +23,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_25_014012) do
 
   create_table "interns", force: :cascade do |t|
     t.text "bio"
+    t.text "career_goal"
     t.datetime "created_at", null: false
     t.string "desired_job_type"
     t.string "desired_location"
@@ -31,6 +32,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_25_014012) do
     t.string "grade"
     t.string "name", null: false
     t.string "password_digest", null: false
+    t.string "portfolio_url"
     t.string "skills"
     t.string "university"
     t.datetime "updated_at", null: false

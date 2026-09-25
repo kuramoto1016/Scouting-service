@@ -39,6 +39,8 @@ function EditProfileForm({ intern }: { intern: Intern }) {
   const [skills, setSkills] = useState(intern.skills ?? "");
   const [desiredLocation, setDesiredLocation] = useState(intern.desired_location ?? "");
   const [desiredJobType, setDesiredJobType] = useState(intern.desired_job_type ?? "");
+  const [portfolioUrl, setPortfolioUrl] = useState(intern.portfolio_url ?? "");
+  const [careerGoal, setCareerGoal] = useState(intern.career_goal ?? "");
   const [errors, setErrors] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -72,6 +74,8 @@ function EditProfileForm({ intern }: { intern: Intern }) {
         skills: committedSkills,
         desired_location: desiredLocation,
         desired_job_type: committedJobType,
+        portfolio_url: portfolioUrl,
+        career_goal: careerGoal,
       });
       if (!mountedRef.current) return;
       updateAccount(updated);
@@ -124,6 +128,23 @@ function EditProfileForm({ intern }: { intern: Intern }) {
           <legend>希望職種</legend>
           <JobTypePicker ref={jobTypePickerRef} value={desiredJobType} onChange={setDesiredJobType} />
         </fieldset>
+        <label>
+          ポートフォリオ・GitHubなどのリンク
+          <input
+            type="url"
+            value={portfolioUrl}
+            onChange={(e) => setPortfolioUrl(e.target.value)}
+            placeholder="例: https://github.com/your-name"
+          />
+        </label>
+        <label>
+          将来のキャリア像・学びたいこと
+          <textarea
+            value={careerGoal}
+            onChange={(e) => setCareerGoal(e.target.value)}
+            placeholder="例: 将来はバックエンドエンジニアとしてサービス開発に携わりたい"
+          />
+        </label>
         {errors.length > 0 && (
           <div className="error-text">
             {errors.map((e) => (

@@ -13,6 +13,8 @@ export interface Intern {
   skills: string | null;
   desired_location: string | null;
   desired_job_type: string | null;
+  portfolio_url: string | null;
+  career_goal: string | null;
 }
 
 export interface InternProfileInput {
@@ -24,6 +26,8 @@ export interface InternProfileInput {
   skills: string;
   desired_location: string;
   desired_job_type: string;
+  portfolio_url: string;
+  career_goal: string;
 }
 
 export interface Company {

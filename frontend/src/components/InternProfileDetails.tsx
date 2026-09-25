@@ -21,6 +21,11 @@ export function InternProfileDetails({ intern }: { intern: Intern }) {
         </p>
       )}
       {intern.bio && <p style={{ marginBottom: "0.5rem" }}>{intern.bio}</p>}
+      {intern.career_goal && (
+        <p className="muted" style={{ marginBottom: "0.5rem" }}>
+          将来の目標: {intern.career_goal}
+        </p>
+      )}
       {skillList.length > 0 && (
         <div className="tag-list">
           {skillList.map((skill) => (
@@ -42,6 +47,13 @@ export function InternProfileDetails({ intern }: { intern: Intern }) {
       {intern.desired_location && (
         <p className="card-meta" style={{ marginTop: "0.5rem" }}>
           希望勤務地: {intern.desired_location}
+        </p>
+      )}
+      {intern.portfolio_url && (
+        <p className="card-meta">
+          <a href={intern.portfolio_url} target="_blank" rel="noopener noreferrer" className="link-accent">
+            ポートフォリオを見る ↗
+          </a>
         </p>
       )}
     </div>
