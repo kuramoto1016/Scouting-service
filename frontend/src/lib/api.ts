@@ -135,6 +135,7 @@ export interface InternSearchParams {
   keyword?: string;
   skill?: string;
   jobType?: string;
+  location?: string;
 }
 
 export function fetchInterns(token: string, search: InternSearchParams = {}) {
@@ -142,6 +143,7 @@ export function fetchInterns(token: string, search: InternSearchParams = {}) {
   if (search.keyword) query.set("keyword", search.keyword);
   if (search.skill) query.set("skill", search.skill);
   if (search.jobType) query.set("job_type", search.jobType);
+  if (search.location) query.set("location", search.location);
 
   const qs = query.toString();
   return request<Intern[]>(`/api/v1/interns${qs ? `?${qs}` : ""}`, { token });

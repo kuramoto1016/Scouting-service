@@ -8,6 +8,7 @@ import { fetchInterns, Intern } from "@/lib/api";
 import { InternProfileDetails } from "@/components/InternProfileDetails";
 import { SUGGESTED_SKILLS } from "@/components/SkillPicker";
 import { SUGGESTED_JOB_TYPES } from "@/components/JobTypePicker";
+import { SUGGESTED_LOCATIONS } from "@/components/LocationPicker";
 
 export default function InternsListPage() {
   const { token, accountType, loading } = useAuth();
@@ -18,6 +19,7 @@ export default function InternsListPage() {
   const [keywordInput, setKeywordInput] = useState("");
   const [skill, setSkill] = useState("");
   const [jobType, setJobType] = useState("");
+  const [location, setLocation] = useState("");
   const [appliedKeyword, setAppliedKeyword] = useState("");
 
   useEffect(() => {
@@ -37,7 +39,7 @@ export default function InternsListPage() {
     let cancelled = false;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- guarded by `cancelled` below
     setLoadingInterns(true);
-    fetchInterns(token, { keyword: appliedKeyword, skill, jobType })
+    fetchInterns(token, { keyword: appliedKeyword, skill, jobType, location })
       .then((data) => {
         if (cancelled) return;
         setInterns(data);
@@ -54,7 +56,7 @@ export default function InternsListPage() {
     return () => {
       cancelled = true;
     };
-  }, [token, accountType, appliedKeyword, skill, jobType]);
+  }, [token, accountType, appliedKeyword, skill, jobType, location]);
 
   const handleSearchSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -66,6 +68,7 @@ export default function InternsListPage() {
     setAppliedKeyword("");
     setSkill("");
     setJobType("");
+    setLocation("");
   };
 
   if (loading || !token || accountType !== "company") return null;
@@ -101,6 +104,17 @@ export default function InternsListPage() {
             {SUGGESTED_JOB_TYPES.map((j) => (
               <option key={j} value={j}>
                 {j}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          希望勤務地
+          <select value={location} onChange={(e) => setLocation(e.target.value)}>
+            <option value="">指定なし</option>
+            {SUGGESTED_LOCATIONS.map((l) => (
+              <option key={l} value={l}>
+                {l}
               </option>
             ))}
           </select>

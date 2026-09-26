@@ -7,6 +7,7 @@ import { updateInternProfile, ApiError, Intern } from "@/lib/api";
 import { SkillPicker } from "@/components/SkillPicker";
 import { JobTypePicker } from "@/components/JobTypePicker";
 import { JobHuntingAxisPicker } from "@/components/JobHuntingAxisPicker";
+import { LocationPicker } from "@/components/LocationPicker";
 import { TagPickerHandle } from "@/components/TagPicker";
 
 export default function EditProfilePage() {
@@ -121,14 +122,10 @@ function EditProfileForm({ intern }: { intern: Intern }) {
           <legend>スキル・使用可能言語</legend>
           <SkillPicker ref={skillPickerRef} value={skills} onChange={setSkills} />
         </fieldset>
-        <label>
-          希望勤務地
-          <input
-            value={desiredLocation}
-            onChange={(e) => setDesiredLocation(e.target.value)}
-            placeholder="例: 東京都・リモート可"
-          />
-        </label>
+        <fieldset className="picker-fieldset">
+          <legend>希望勤務地</legend>
+          <LocationPicker value={desiredLocation} onChange={setDesiredLocation} />
+        </fieldset>
         <fieldset className="picker-fieldset">
           <legend>希望職種</legend>
           <JobTypePicker ref={jobTypePickerRef} value={desiredJobType} onChange={setDesiredJobType} />

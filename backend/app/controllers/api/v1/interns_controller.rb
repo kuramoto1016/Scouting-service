@@ -15,6 +15,7 @@ module Api
         interns = Intern.search_keyword(params[:keyword])
                          .with_skill(params[:skill])
                          .with_job_type(params[:job_type])
+                         .with_location(params[:location])
                          .order(:name)
         render json: interns.as_json(only: PROFILE_FIELDS)
       end

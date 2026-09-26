@@ -32,6 +32,12 @@ class Intern < ApplicationRecord
     where_tag_match(:desired_job_type, job_type)
   }
 
+  scope :with_location, lambda { |location|
+    next all if location.blank?
+
+    where_tag_match(:desired_location, location)
+  }
+
   # Matches a comma-separated tag column (e.g. "Ruby, Ruby on Rails") against a
   # complete tag rather than a substring, so "Ruby" doesn't also match
   # "Ruby on Rails". Tags may have surrounding whitespace after the comma.

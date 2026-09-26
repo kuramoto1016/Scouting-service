@@ -13,6 +13,7 @@ export function InternProfileDetails({ intern }: { intern: Intern }) {
   const skillList = splitTags(intern.skills);
   const jobTypeList = splitTags(intern.desired_job_type);
   const axisList = splitTags(intern.job_hunting_axes);
+  const locationList = splitTags(intern.desired_location);
 
   return (
     <div>
@@ -54,10 +55,19 @@ export function InternProfileDetails({ intern }: { intern: Intern }) {
           ))}
         </div>
       )}
-      {intern.desired_location && (
-        <p className="card-meta" style={{ marginTop: "0.5rem" }}>
-          希望勤務地: {intern.desired_location}
-        </p>
+      {locationList.length > 0 && (
+        <div style={{ marginTop: "0.5rem" }}>
+          <p className="card-meta" style={{ marginBottom: "0.3rem" }}>
+            希望勤務地
+          </p>
+          <div className="tag-list">
+            {locationList.map((location) => (
+              <span key={location} className="tag tag-outline">
+                {location}
+              </span>
+            ))}
+          </div>
+        </div>
       )}
       {intern.portfolio_url && (
         <p className="card-meta">
