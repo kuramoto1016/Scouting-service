@@ -44,7 +44,7 @@ class Intern < ApplicationRecord
   def self.where_tag_match(column, value)
     escaped = sanitize_sql_like(value.strip)
     where(
-      "(',' || REPLACE(#{column}, ' ', '') || ',') LIKE ?",
+      "(',' || REPLACE(#{column}, ' ', '') || ',') LIKE ? ESCAPE '\\'",
       "%,#{escaped.delete(' ')},%"
     )
   end
