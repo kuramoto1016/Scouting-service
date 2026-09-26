@@ -117,10 +117,15 @@ export default function InternsListPage() {
       {!loadingInterns && interns.length === 0 && <p className="muted">該当するインターン生が見つかりませんでした。</p>}
       {interns.map((intern) => (
         <div key={intern.id} className="card">
-          <div className="card-title">{intern.name}</div>
+          <Link href={`/interns/${intern.id}`} className="card-title card-title-link">
+            {intern.name}
+          </Link>
           <div className="card-meta">{intern.email}</div>
           <InternProfileDetails intern={intern} />
-          <Link href={`/messages/intern/${intern.id}`}>メッセージを送る</Link>
+          <div style={{ display: "flex", gap: "1rem" }}>
+            <Link href={`/interns/${intern.id}`}>プロフィールを見る</Link>
+            <Link href={`/messages/intern/${intern.id}`}>メッセージを送る</Link>
+          </div>
         </div>
       ))}
     </div>

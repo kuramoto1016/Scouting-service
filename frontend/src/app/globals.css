@@ -170,6 +170,15 @@ a.card:hover {
   color: var(--accent-text);
 }
 
+.card-title-link {
+  display: block;
+  width: fit-content;
+}
+
+.card-title-link:hover {
+  text-decoration: underline;
+}
+
 .card-meta {
   font-size: 0.85rem;
   color: var(--muted);
