@@ -3,7 +3,7 @@
 import { forwardRef } from "react";
 import { TagPicker, TagPickerHandle } from "./TagPicker";
 
-const SUGGESTED_SKILLS = [
+export const SUGGESTED_SKILLS = [
   "Ruby",
   "Ruby on Rails",
   "Python",

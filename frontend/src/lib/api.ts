@@ -131,8 +131,20 @@ export function fetchMe(token: string) {
   return request<{ account_type: AccountType; account: Intern | Company }>("/api/v1/me", { token });
 }
 
-export function fetchInterns(token: string) {
-  return request<Intern[]>("/api/v1/interns", { token });
+export interface InternSearchParams {
+  keyword?: string;
+  skill?: string;
+  jobType?: string;
+}
+
+export function fetchInterns(token: string, search: InternSearchParams = {}) {
+  const query = new URLSearchParams();
+  if (search.keyword) query.set("keyword", search.keyword);
+  if (search.skill) query.set("skill", search.skill);
+  if (search.jobType) query.set("job_type", search.jobType);
+
+  const qs = query.toString();
+  return request<Intern[]>(`/api/v1/interns${qs ? `?${qs}` : ""}`, { token });
 }
 
 export function fetchIntern(token: string, id: number) {

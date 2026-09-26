@@ -10,6 +10,28 @@ class Intern < ApplicationRecord
   validates :password, length: { minimum: 8 }, allow_nil: true
   validate :portfolio_url_must_be_valid_http_url
 
+  scope :search_keyword, lambda { |keyword|
+    next all if keyword.blank?
+
+    pattern = "%#{sanitize_sql_like(keyword)}%"
+    where(
+      "name LIKE :p OR bio LIKE :p OR university LIKE :p OR faculty LIKE :p",
+      p: pattern
+    )
+  }
+
+  scope :with_skill, lambda { |skill|
+    next all if skill.blank?
+
+    where("skills LIKE ?", "%#{sanitize_sql_like(skill)}%")
+  }
+
+  scope :with_job_type, lambda { |job_type|
+    next all if job_type.blank?
+
+    where("desired_job_type LIKE ?", "%#{sanitize_sql_like(job_type)}%")
+  }
+
   private
 
   def portfolio_url_must_be_valid_http_url

@@ -3,7 +3,7 @@
 import { forwardRef } from "react";
 import { TagPicker, TagPickerHandle } from "./TagPicker";
 
-const SUGGESTED_JOB_TYPES = [
+export const SUGGESTED_JOB_TYPES = [
   "バックエンドエンジニア",
   "フロントエンドエンジニア",
   "フルスタックエンジニア",

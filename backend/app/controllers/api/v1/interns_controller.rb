@@ -12,7 +12,10 @@ module Api
       ].freeze
 
       def index
-        interns = Intern.order(:name)
+        interns = Intern.search_keyword(params[:keyword])
+                         .with_skill(params[:skill])
+                         .with_job_type(params[:job_type])
+                         .order(:name)
         render json: interns.as_json(only: PROFILE_FIELDS)
       end
 
