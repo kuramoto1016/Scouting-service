@@ -23,14 +23,25 @@ class Intern < ApplicationRecord
   scope :with_skill, lambda { |skill|
     next all if skill.blank?
 
-    where("skills LIKE ?", "%#{sanitize_sql_like(skill)}%")
+    where_tag_match(:skills, skill)
   }
 
   scope :with_job_type, lambda { |job_type|
     next all if job_type.blank?
 
-    where("desired_job_type LIKE ?", "%#{sanitize_sql_like(job_type)}%")
+    where_tag_match(:desired_job_type, job_type)
   }
+
+  # Matches a comma-separated tag column (e.g. "Ruby, Ruby on Rails") against a
+  # complete tag rather than a substring, so "Ruby" doesn't also match
+  # "Ruby on Rails". Tags may have surrounding whitespace after the comma.
+  def self.where_tag_match(column, value)
+    escaped = sanitize_sql_like(value.strip)
+    where(
+      "(',' || REPLACE(#{column}, ' ', '') || ',') LIKE ?",
+      "%,#{escaped.delete(' ')},%"
+    )
+  end
 
   private
 

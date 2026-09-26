@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, FormEvent } from "react";
+import { useEffect, useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
@@ -31,19 +31,30 @@ export default function InternsListPage() {
     }
   }, [loading, token, accountType, router]);
 
-  const loadInterns = useCallback(() => {
+  useEffect(() => {
     if (!token || accountType !== "company") return;
+
+    let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- guarded by `cancelled` below
     setLoadingInterns(true);
     fetchInterns(token, { keyword: appliedKeyword, skill, jobType })
-      .then(setInterns)
-      .catch(() => setInterns([]))
-      .finally(() => setLoadingInterns(false));
-  }, [token, accountType, appliedKeyword, skill, jobType]);
+      .then((data) => {
+        if (cancelled) return;
+        setInterns(data);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setInterns([]);
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setLoadingInterns(false);
+      });
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    loadInterns();
-  }, [loadInterns]);
+    return () => {
+      cancelled = true;
+    };
+  }, [token, accountType, appliedKeyword, skill, jobType]);
 
   const handleSearchSubmit = (e: FormEvent) => {
     e.preventDefault();

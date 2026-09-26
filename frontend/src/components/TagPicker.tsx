@@ -91,7 +91,7 @@ export const TagPicker = forwardRef<
         ))}
       </div>
 
-      {allowCustom && customTags.length > 0 && (
+      {customTags.length > 0 && (
         <div className="skill-picker-suggestions" style={{ marginTop: "0.5rem" }}>
           {customTags.map((tag) => (
             <button key={tag} type="button" className="skill-chip selected" onClick={() => removeTag(tag)}>
