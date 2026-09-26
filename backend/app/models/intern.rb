@@ -40,12 +40,15 @@ class Intern < ApplicationRecord
 
   # Matches a comma-separated tag column (e.g. "Ruby, Ruby on Rails") against a
   # complete tag rather than a substring, so "Ruby" doesn't also match
-  # "Ruby on Rails". Tags may have surrounding whitespace after the comma.
+  # "Ruby on Rails". Only whitespace immediately adjacent to the comma
+  # delimiter is normalized; spaces inside a tag (e.g. "C ++") are preserved
+  # so it stays distinct from "C++".
   def self.where_tag_match(column, value)
     escaped = sanitize_sql_like(value.strip)
+    normalized_column = "REPLACE(REPLACE(#{column}, ', ', ','), ' ,', ',')"
     where(
-      "(',' || REPLACE(#{column}, ' ', '') || ',') LIKE ? ESCAPE '\\'",
-      "%,#{escaped.delete(' ')},%"
+      "(',' || #{normalized_column} || ',') LIKE ? ESCAPE '\\'",
+      "%,#{escaped},%"
     )
   end
 
