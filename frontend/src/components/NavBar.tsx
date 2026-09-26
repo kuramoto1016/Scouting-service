@@ -13,9 +13,11 @@ export function NavBar() {
     router.push("/");
   };
 
+  const brandHref = !loading && token ? (accountType === "company" ? "/interns" : "/jobs") : "/";
+
   return (
     <header className="navbar">
-      <Link href="/" className="navbar-brand">
+      <Link href={brandHref} className="navbar-brand">
         スカウトサービス
       </Link>
       <nav className="navbar-links">
