@@ -7,6 +7,29 @@ export interface Intern {
   name: string;
   email: string;
   bio: string | null;
+  university: string | null;
+  faculty: string | null;
+  grade: string | null;
+  skills: string | null;
+  desired_location: string | null;
+  desired_job_type: string | null;
+  portfolio_url: string | null;
+  career_goal: string | null;
+  job_hunting_axes: string | null;
+}
+
+export interface InternProfileInput {
+  name: string;
+  bio: string;
+  university: string;
+  faculty: string;
+  grade: string;
+  skills: string;
+  desired_location: string;
+  desired_job_type: string;
+  portfolio_url: string;
+  career_goal: string;
+  job_hunting_axes: string;
 }
 
 export interface Company {
@@ -108,8 +131,34 @@ export function fetchMe(token: string) {
   return request<{ account_type: AccountType; account: Intern | Company }>("/api/v1/me", { token });
 }
 
-export function fetchInterns(token: string) {
-  return request<Intern[]>("/api/v1/interns", { token });
+export interface InternSearchParams {
+  keyword?: string;
+  skill?: string;
+  jobType?: string;
+  location?: string;
+}
+
+export function fetchInterns(token: string, search: InternSearchParams = {}) {
+  const query = new URLSearchParams();
+  if (search.keyword) query.set("keyword", search.keyword);
+  if (search.skill) query.set("skill", search.skill);
+  if (search.jobType) query.set("job_type", search.jobType);
+  if (search.location) query.set("location", search.location);
+
+  const qs = query.toString();
+  return request<Intern[]>(`/api/v1/interns${qs ? `?${qs}` : ""}`, { token });
+}
+
+export function fetchIntern(token: string, id: number) {
+  return request<Intern>(`/api/v1/interns/${id}`, { token });
+}
+
+export function updateInternProfile(token: string, id: number, params: Partial<InternProfileInput>) {
+  return request<Intern>(`/api/v1/interns/${id}`, {
+    method: "PATCH",
+    token,
+    body: JSON.stringify({ intern: params }),
+  });
 }
 
 export function fetchConversations(token: string) {

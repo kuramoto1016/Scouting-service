@@ -5,7 +5,84 @@ class Intern < ApplicationRecord
 
   EMAIL_REGEXP = /\A[^@\s]+@[^@\s]+\z/
 
+  TAG_COLUMNS = %i[skills desired_job_type desired_location job_hunting_axes].freeze
+
   validates :name, presence: true
   validates :email, presence: true, uniqueness: true, format: { with: EMAIL_REGEXP }
   validates :password, length: { minimum: 8 }, allow_nil: true
+  validate :portfolio_url_must_be_valid_http_url
+
+  before_validation :normalize_tag_columns
+
+  scope :search_keyword, lambda { |keyword|
+    next all if keyword.blank?
+
+    pattern = "%#{sanitize_sql_like(keyword)}%"
+    where(
+      "name LIKE :p OR bio LIKE :p OR university LIKE :p OR faculty LIKE :p",
+      p: pattern
+    )
+  }
+
+  scope :with_skill, lambda { |skill|
+    next all if skill.blank?
+
+    where_tag_match(:skills, skill)
+  }
+
+  scope :with_job_type, lambda { |job_type|
+    next all if job_type.blank?
+
+    where_tag_match(:desired_job_type, job_type)
+  }
+
+  scope :with_location, lambda { |location|
+    next all if location.blank?
+
+    where_tag_match(:desired_location, location)
+  }
+
+  # Matches a comma-separated tag column (e.g. "Ruby, Ruby on Rails") against a
+  # complete tag rather than a substring, so "Ruby" doesn't also match
+  # "Ruby on Rails". Relies on tag columns always being stored in normalized
+  # "tag, tag" form (see #normalize_tag_columns), so a single ", " delimiter
+  # is sufficient here; spaces inside a tag (e.g. "C ++") are preserved and
+  # stay distinct from "C++".
+  def self.where_tag_match(column, value)
+    escaped = sanitize_sql_like(normalize_tag_value(value))
+    where(
+      "(',' || REPLACE(#{column}, ', ', ',') || ',') LIKE ? ESCAPE '\\'",
+      "%,#{escaped},%"
+    )
+  end
+
+  def self.normalize_tag_value(value)
+    value.to_s.strip
+  end
+
+  def self.normalize_tag_list(value)
+    value.to_s.split(",").map { |tag| normalize_tag_value(tag) }.reject(&:empty?).join(", ")
+  end
+
+  private
+
+  def normalize_tag_columns
+    TAG_COLUMNS.each do |column|
+      value = read_attribute(column)
+      next if value.nil?
+
+      write_attribute(column, self.class.normalize_tag_list(value))
+    end
+  end
+
+  def portfolio_url_must_be_valid_http_url
+    return if portfolio_url.blank?
+
+    uri = URI.parse(portfolio_url)
+    unless uri.is_a?(URI::HTTP) && uri.host.present?
+      errors.add(:portfolio_url, "is invalid")
+    end
+  rescue URI::InvalidURIError
+    errors.add(:portfolio_url, "is invalid")
+  end
 end

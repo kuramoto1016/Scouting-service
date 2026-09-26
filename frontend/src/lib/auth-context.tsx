@@ -13,6 +13,12 @@ interface AuthState {
 interface AuthContextValue extends AuthState {
   signIn: (token: string, accountType: AccountType, account: Intern | Company) => void;
   signOut: () => void;
+  /**
+   * Updates the cached account profile, but only if `forToken` still matches
+   * the current session's token. This guards against a stale response from a
+   * profile save landing after the user has signed out or switched accounts.
+   */
+  updateAccount: (account: Intern | Company, forToken: string) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -63,8 +69,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setState({ token: null, accountType: null, account: null, loading: false });
   }, []);
 
+  const updateAccount = useCallback((account: Intern | Company, forToken: string) => {
+    setState((s) => (s.token === forToken ? { ...s, account } : s));
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ ...state, signIn, signOut }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ ...state, signIn, signOut, updateAccount }}>
+      {children}
+    </AuthContext.Provider>
   );
 }
 
