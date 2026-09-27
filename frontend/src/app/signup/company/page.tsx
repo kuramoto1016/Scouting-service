@@ -2,7 +2,7 @@
 
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { signupCompany, ApiError } from "@/lib/api";
+import { signupCompany, ApiError, homePathFor } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 
 export default function CompanySignupPage() {
@@ -23,7 +23,7 @@ export default function CompanySignupPage() {
       const res = await signupCompany({ name, email, password, description });
       if (res.company) {
         signIn(res.token, "company", res.company);
-        router.push("/mypage");
+        router.push(homePathFor("company"));
       }
     } catch (err) {
       if (err instanceof ApiError) setErrors(err.errors);

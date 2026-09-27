@@ -2,7 +2,7 @@
 
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { login, ApiError, AccountType } from "@/lib/api";
+import { login, ApiError, AccountType, homePathFor } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 
 export default function LoginPage() {
@@ -22,7 +22,7 @@ export default function LoginPage() {
       const res = await login({ accountType, email, password });
       if (res.account && res.account_type) {
         signIn(res.token, res.account_type, res.account);
-        router.push("/mypage");
+        router.push(homePathFor(res.account_type));
       }
     } catch (err) {
       if (err instanceof ApiError) setErrors(err.errors);

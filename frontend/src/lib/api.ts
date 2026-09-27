@@ -2,6 +2,11 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3
 
 export type AccountType = "intern" | "company";
 
+/** Where to send a signed-in user by default: interns to job listings, companies to the intern roster. */
+export function homePathFor(accountType: AccountType): string {
+  return accountType === "company" ? "/interns" : "/jobs";
+}
+
 export interface Intern {
   id: number;
   name: string;
