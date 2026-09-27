@@ -22,7 +22,7 @@ module Api
       end
 
       def serialize(intern)
-        intern.as_json(only: %i[id name email bio])
+        intern.as_json(only: InternsController::PROFILE_FIELDS)
       end
     end
   end

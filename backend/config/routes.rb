@@ -10,7 +10,7 @@ Rails.application.routes.draw do
       post "auth/company_signup", to: "company_registrations#create"
       get "me", to: "me#show"
 
-      resources :interns, only: %i[index show] do
+      resources :interns, only: %i[index show update] do
         resources :messages, only: %i[index create]
       end
 
