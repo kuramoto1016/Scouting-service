@@ -4,7 +4,7 @@
 
 ## 構成
 
-- `backend/` : Rails 8 (APIモード) + SQLite3
+- `backend/` : Rails 8 (APIモード) + PostgreSQL
 - `frontend/` : Next.js (App Router, TypeScript)
 
 ## 主な機能
@@ -18,11 +18,22 @@
 
 ### バックエンド (Rails)
 
+事前にローカルでPostgreSQLを起動しておいてください。接続情報は環境変数で上書きできます（デフォルトは `config/database.yml` を参照）。
+
 ```bash
 cd backend
 bundle install
 rails db:create db:migrate db:seed
 rails server # http://localhost:3001
+```
+
+接続先を変更する場合は以下の環境変数を設定してください。
+
+```
+DATABASE_HOST=localhost
+DATABASE_PORT=5432
+DATABASE_USERNAME=postgres
+DATABASE_PASSWORD=devpassword123
 ```
 
 ### フロントエンド (Next.js)
