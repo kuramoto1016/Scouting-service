@@ -1,4 +1,8 @@
 class RecreateMessagesForConversations < ActiveRecord::Migration[8.1]
+  # NOTE: This intentionally discards all existing rows in `messages` instead of
+  # backfilling them into the new conversation-based schema. There is no seed data
+  # for messages, and this is a local development database only, so the decision
+  # was to accept the data loss rather than write a one-off backfill for it.
   def up
     drop_table :messages
 
