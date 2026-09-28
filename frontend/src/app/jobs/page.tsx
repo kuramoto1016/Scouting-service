@@ -44,18 +44,52 @@ function JobsPageContent() {
   const [totalCount, setTotalCount] = useState(0);
   const [loadingJobs, setLoadingJobs] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [locationInputState, setLocationInputState] = useState({
+    value: filterValues.location,
+    urlLocation: filterValues.location,
+  });
+  const locationInput =
+    locationInputState.urlLocation === filterValues.location ? locationInputState.value : filterValues.location;
 
-  const handleFilterChange = useCallback(
+  const displayedFilterValues = useMemo(
+    () => ({ ...filterValues, location: locationInput }),
+    [filterValues, locationInput]
+  );
+
+  const replaceFilters = useCallback(
     (next: JobPostingFilterValues) => {
       const qs = buildQueryString(next);
-      router.push(qs ? `/jobs?${qs}` : "/jobs");
+      router.replace(qs ? `/jobs?${qs}` : "/jobs");
     },
     [router]
   );
 
+  const handleFilterChange = useCallback(
+    (next: JobPostingFilterValues) => {
+      if (next.location !== locationInput) {
+        setLocationInputState({ value: next.location, urlLocation: filterValues.location });
+        return;
+      }
+
+      replaceFilters(next);
+    },
+    [filterValues.location, locationInput, replaceFilters]
+  );
+
   const handleReset = useCallback(() => {
-    router.push("/jobs");
+    setLocationInputState({ value: "", urlLocation: "" });
+    router.replace("/jobs");
   }, [router]);
+
+  useEffect(() => {
+    if (locationInput === filterValues.location) return;
+
+    const timeoutId = window.setTimeout(() => {
+      replaceFilters({ ...filterValues, location: locationInput });
+    }, 300);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [filterValues, locationInput, replaceFilters]);
 
   useEffect(() => {
     let cancelled = false;
@@ -93,7 +127,7 @@ function JobsPageContent() {
     <div>
       <h1 className="page-title">募集一覧</h1>
       <div className="jobs-layout">
-        <JobPostingFilters values={filterValues} onChange={handleFilterChange} onReset={handleReset} />
+        <JobPostingFilters values={displayedFilterValues} onChange={handleFilterChange} onReset={handleReset} />
         <div className="jobs-results">
           {!loadingJobs && !error && <p className="muted jobs-count">募集中の求人 {totalCount}件</p>}
           {error && <p className="error-text">{error}</p>}
