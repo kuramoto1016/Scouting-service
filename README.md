@@ -18,23 +18,18 @@
 
 ### バックエンド (Rails)
 
-事前にローカルでPostgreSQLを起動しておいてください。接続情報は環境変数で上書きできます（デフォルトは `config/database.yml` を参照）。
+事前にローカルでPostgreSQLを起動し、`backend/.env.example` を `backend/.env` にコピーして自分のpostgresユーザーのパスワードを設定してください（`DATABASE_PASSWORD` は必須で、未設定だと起動時にエラーになります）。
 
 ```bash
 cd backend
+cp .env.example .env
+# .env を編集し、DATABASE_PASSWORD に自分の postgres ユーザーのパスワードを設定
 bundle install
 rails db:create db:migrate db:seed
 rails server # http://localhost:3001
 ```
 
-接続先を変更する場合は以下の環境変数を設定してください。
-
-```
-DATABASE_HOST=localhost
-DATABASE_PORT=5432
-DATABASE_USERNAME=postgres
-DATABASE_PASSWORD=devpassword123
-```
+`DATABASE_HOST` / `DATABASE_PORT` / `DATABASE_USERNAME` は未設定の場合それぞれ `localhost` / `5432` / `postgres` が使われます。
 
 ### フロントエンド (Next.js)
 
