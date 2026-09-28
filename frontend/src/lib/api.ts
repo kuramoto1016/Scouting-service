@@ -51,12 +51,35 @@ export interface Message {
   created_at: string;
 }
 
+export type WorkStyle = "online" | "onsite" | "hybrid";
+export type JobCategory = "backend" | "frontend" | "mobile" | "infra" | "data" | "design";
+
 export interface JobPosting {
   id: number;
   title: string;
   description: string;
   created_at: string;
+  graduation_year: number | null;
+  starts_on: string | null;
+  ends_on: string | null;
+  work_style: WorkStyle | null;
+  location: string | null;
+  job_category: JobCategory | null;
+  skills: string[];
+  deadline_soon: boolean;
   company: { id: number; name: string };
+}
+
+export interface JobPostingSearchParams {
+  graduationYear?: number | string;
+  workStyle?: WorkStyle;
+  jobCategory?: JobCategory;
+  location?: string;
+}
+
+export interface JobPostingListResponse {
+  total_count: number;
+  job_postings: JobPosting[];
 }
 
 export class ApiError extends Error {
@@ -199,11 +222,34 @@ export function sendMessage(
   });
 }
 
-export function fetchJobPostings() {
-  return request<JobPosting[]>("/api/v1/job_postings");
+export function fetchJobPostings(search: JobPostingSearchParams = {}) {
+  const query = new URLSearchParams();
+  if (search.graduationYear) query.set("graduation_year", String(search.graduationYear));
+  if (search.workStyle) query.set("work_style", search.workStyle);
+  if (search.jobCategory) query.set("job_category", search.jobCategory);
+  if (search.location) query.set("location", search.location);
+
+  const qs = query.toString();
+  return request<JobPostingListResponse>(`/api/v1/job_postings${qs ? `?${qs}` : ""}`);
 }
 
-export function createJobPosting(token: string, params: { title: string; description: string }) {
+export function fetchJobPosting(id: number) {
+  return request<JobPosting>(`/api/v1/job_postings/${id}`);
+}
+
+export interface JobPostingInput {
+  title: string;
+  description: string;
+  graduation_year?: number | null;
+  starts_on?: string | null;
+  ends_on?: string | null;
+  work_style?: WorkStyle | null;
+  location?: string | null;
+  job_category?: JobCategory | null;
+  skills?: string[];
+}
+
+export function createJobPosting(token: string, params: JobPostingInput) {
   return request<JobPosting>("/api/v1/job_postings", {
     method: "POST",
     token,
