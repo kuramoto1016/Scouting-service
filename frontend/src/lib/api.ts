@@ -7,34 +7,79 @@ export function homePathFor(accountType: AccountType): string {
   return accountType === "company" ? "/interns" : "/jobs";
 }
 
+export type SchoolType = "university" | "graduate_school" | "vocational_school" | "technical_college" | "other";
+export type SkillCategory = "language" | "framework" | "tool";
+export type SkillLevel = "class_experience" | "personal" | "team";
+export type PortfolioContext = "class_project" | "personal" | "hackathon" | "intern" | "other";
+export type ProfileSection =
+  | "basic_info"
+  | "desired_conditions"
+  | "skills"
+  | "portfolio_items"
+  | "self_pr"
+  | "links";
+
+export interface BasicInfo {
+  school_type: SchoolType | null;
+  school_name: string | null;
+  department: string | null;
+  graduation_year_month: string | null;
+}
+
+export interface DesiredRole {
+  role: string;
+  priority: number;
+}
+
+export interface DesiredConditions {
+  desired_roles: DesiredRole[];
+  desired_location: string | null;
+  job_hunting_axes: string | null;
+}
+
+export interface StudentSkillEntry {
+  id: number;
+  name: string;
+  category: SkillCategory;
+  level: SkillLevel;
+}
+
+export interface PortfolioItem {
+  id: number;
+  title: string;
+  summary: string | null;
+  context: PortfolioContext | null;
+  tech_stack: string[];
+  highlights: string | null;
+  github_url: string | null;
+  other_url: string | null;
+  position: number;
+}
+
+export interface SelfPr {
+  bio: string | null;
+  career_goal: string | null;
+}
+
+export interface ProfileLink {
+  portfolio_item_id: number;
+  title: string;
+  github_url: string | null;
+  other_url: string | null;
+}
+
 export interface Intern {
   id: number;
   name: string;
   email: string;
-  bio: string | null;
-  university: string | null;
-  faculty: string | null;
-  grade: string | null;
-  skills: string | null;
-  desired_location: string | null;
-  desired_job_type: string | null;
-  portfolio_url: string | null;
-  career_goal: string | null;
-  job_hunting_axes: string | null;
-}
-
-export interface InternProfileInput {
-  name: string;
-  bio: string;
-  university: string;
-  faculty: string;
-  grade: string;
-  skills: string;
-  desired_location: string;
-  desired_job_type: string;
-  portfolio_url: string;
-  career_goal: string;
-  job_hunting_axes: string;
+  completion_percentage: number;
+  missing_sections: ProfileSection[];
+  basic_info: BasicInfo;
+  desired_conditions: DesiredConditions;
+  skills: StudentSkillEntry[];
+  portfolio_items: PortfolioItem[];
+  self_pr: SelfPr;
+  links: ProfileLink[];
 }
 
 export interface Company {
@@ -131,9 +176,10 @@ export interface AuthResponse<T> {
 }
 
 export function signupIntern(params: { name: string; email: string; password: string; bio?: string }) {
+  const { bio, ...intern } = params;
   return request<AuthResponse<Intern>>("/api/v1/auth/intern_signup", {
     method: "POST",
-    body: JSON.stringify({ intern: params }),
+    body: JSON.stringify({ intern: bio ? { ...intern, bio } : intern }),
   });
 }
 
@@ -181,16 +227,102 @@ export function fetchIntern(token: string, id: number) {
   return request<Intern>(`/api/v1/interns/${id}`, { token });
 }
 
-export function updateInternProfile(token: string, id: number, params: Partial<InternProfileInput>) {
-  return request<Intern>(`/api/v1/interns/${id}`, {
+export function updateBasicInfo(token: string, internId: number, params: Partial<BasicInfo>) {
+  return request<Intern>(`/api/v1/interns/${internId}/student_profile/basic_info`, {
     method: "PATCH",
     token,
-    body: JSON.stringify({ intern: params }),
+    body: JSON.stringify({ student_profile: params }),
   });
 }
 
+export function updateDesiredConditions(
+  token: string,
+  internId: number,
+  params: { desired_roles: DesiredRole[]; desired_location: string; job_hunting_axes: string }
+) {
+  return request<Intern>(`/api/v1/interns/${internId}/student_profile/desired_conditions`, {
+    method: "PATCH",
+    token,
+    body: JSON.stringify({ student_profile: params }),
+  });
+}
+
+export function updateSelfPr(token: string, internId: number, params: Partial<SelfPr>) {
+  return request<Intern>(`/api/v1/interns/${internId}/student_profile/self_pr`, {
+    method: "PATCH",
+    token,
+    body: JSON.stringify({ student_profile: params }),
+  });
+}
+
+export interface StudentSkillInput {
+  name: string;
+  category: SkillCategory;
+  level: SkillLevel;
+}
+
+export function updateSkills(token: string, internId: number, skills: StudentSkillInput[]) {
+  return request<Intern>(`/api/v1/interns/${internId}/student_skills`, {
+    method: "PUT",
+    token,
+    body: JSON.stringify({ skills }),
+  });
+}
+
+export interface PortfolioItemInput {
+  title: string;
+  summary?: string;
+  context?: PortfolioContext;
+  tech_stack?: string[];
+  highlights?: string;
+  github_url?: string;
+  other_url?: string;
+}
+
+export function createPortfolioItem(token: string, internId: number, params: PortfolioItemInput) {
+  return request<Intern>(`/api/v1/interns/${internId}/portfolio_items`, {
+    method: "POST",
+    token,
+    body: JSON.stringify({ portfolio_item: params }),
+  });
+}
+
+export function updatePortfolioItem(
+  token: string,
+  internId: number,
+  itemId: number,
+  params: Partial<PortfolioItemInput>
+) {
+  return request<Intern>(`/api/v1/interns/${internId}/portfolio_items/${itemId}`, {
+    method: "PATCH",
+    token,
+    body: JSON.stringify({ portfolio_item: params }),
+  });
+}
+
+export function deletePortfolioItem(token: string, internId: number, itemId: number) {
+  return request<Intern>(`/api/v1/interns/${internId}/portfolio_items/${itemId}`, {
+    method: "DELETE",
+    token,
+  });
+}
+
+export function reorderPortfolioItems(token: string, internId: number, orderedIds: number[]) {
+  return request<Intern>(`/api/v1/interns/${internId}/portfolio_items/reorder`, {
+    method: "PATCH",
+    token,
+    body: JSON.stringify({ ordered_ids: orderedIds }),
+  });
+}
+
+export interface ConversationPartner {
+  id: number;
+  name: string;
+  email: string;
+}
+
 export function fetchConversations(token: string) {
-  return request<(Intern | Company)[]>("/api/v1/conversations", { token });
+  return request<ConversationPartner[]>("/api/v1/conversations", { token });
 }
 
 export function fetchMessages(

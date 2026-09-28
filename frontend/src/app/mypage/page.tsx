@@ -4,13 +4,13 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
-import { fetchConversations, Intern, Company } from "@/lib/api";
-import { InternProfileDetails } from "@/components/InternProfileDetails";
+import { fetchConversations, Intern, Company, ConversationPartner } from "@/lib/api";
+import { StudentMyPage } from "./StudentMyPage";
 
 export default function MyPage() {
   const { token, accountType, account, loading } = useAuth();
   const router = useRouter();
-  const [conversations, setConversations] = useState<(Intern | Company)[]>([]);
+  const [conversations, setConversations] = useState<ConversationPartner[]>([]);
   const [loadingConversations, setLoadingConversations] = useState(true);
 
   useEffect(() => {
@@ -27,45 +27,49 @@ export default function MyPage() {
       .finally(() => setLoadingConversations(false));
   }, [token]);
 
-  if (loading || !token) return null;
+  if (loading || !token || !account) return null;
 
-  const partnerType = accountType === "company" ? "intern" : "company";
+  if (accountType === "intern") {
+    return (
+      <div>
+        <StudentMyPage intern={account as Intern} />
+        <div id="conversations" style={{ marginTop: "2rem" }}>
+          <h2 style={{ marginBottom: "0.75rem" }}>受信したスカウト</h2>
+          {loadingConversations && <p className="muted">読み込み中...</p>}
+          {!loadingConversations && conversations.length === 0 && (
+            <p className="muted">まだメッセージのやり取りがありません。</p>
+          )}
+          {conversations.map((c) => (
+            <Link key={c.id} href={`/messages/company/${c.id}`} className="card" style={{ display: "block" }}>
+              <div className="card-title">{c.name}</div>
+              <div className="card-meta">{c.email}</div>
+            </Link>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  const company = account as Company;
 
   return (
     <div>
       <h1 className="page-title">マイページ</h1>
       <div className="card">
-        <div className="card-title">{account?.name}</div>
-        <div className="card-meta">{account?.email}</div>
-        {accountType === "company" && (account as Company).description && (
-          <p>{(account as Company).description}</p>
-        )}
-        {accountType === "intern" && (
-          <InternProfileDetails intern={account as Intern} />
-        )}
+        <div className="card-title">{company.name}</div>
+        <div className="card-meta">{company.email}</div>
+        {company.description && <p>{company.description}</p>}
       </div>
 
-      {accountType === "intern" && (
-        <div style={{ margin: "1rem 0" }}>
-          <Link href="/mypage/edit" className="btn-primary">
-            プロフィールを編集する
-          </Link>
-        </div>
-      )}
+      <div style={{ margin: "1rem 0" }}>
+        <Link href="/interns" className="btn-primary">
+          インターン生一覧を見る
+        </Link>
+      </div>
 
-      {accountType === "company" && (
-        <div style={{ margin: "1rem 0" }}>
-          <Link href="/interns" className="btn-primary">
-            インターン生一覧を見る
-          </Link>
-        </div>
-      )}
-
-      {accountType === "company" && (
-        <div style={{ margin: "1rem 0" }}>
-          <Link href="/jobs/new">募集を掲載する</Link>
-        </div>
-      )}
+      <div style={{ margin: "1rem 0" }}>
+        <Link href="/jobs/new">募集を掲載する</Link>
+      </div>
 
       <h2 style={{ marginTop: "2rem", marginBottom: "0.75rem" }}>メッセージのやり取り</h2>
       {loadingConversations && <p className="muted">読み込み中...</p>}
@@ -73,7 +77,7 @@ export default function MyPage() {
         <p className="muted">まだメッセージのやり取りがありません。</p>
       )}
       {conversations.map((c) => (
-        <Link key={c.id} href={`/messages/${partnerType}/${c.id}`} className="card" style={{ display: "block" }}>
+        <Link key={c.id} href={`/messages/intern/${c.id}`} className="card" style={{ display: "block" }}>
           <div className="card-title">{c.name}</div>
           <div className="card-meta">{c.email}</div>
         </Link>
