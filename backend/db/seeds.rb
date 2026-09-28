@@ -1,4 +1,7 @@
-# This file should ensure the existence of records required to run the application in every environment.
+# This file creates demo/dummy accounts and job postings for local development.
+# It must never run against a shared or production environment, since every
+# account below is created with the same well-known password.
+raise "db:seed must not be run in production" if Rails.env.production?
 
 intern = Intern.find_or_create_by!(email: "intern@example.com") do |i|
   i.name = "山田太郎"
