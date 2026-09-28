@@ -13,10 +13,12 @@ export interface JobPostingFilterValues {
 
 export function JobPostingFilters({
   values,
+  graduationYearOptions,
   onChange,
   onReset,
 }: {
   values: JobPostingFilterValues;
+  graduationYearOptions: number[];
   onChange: (values: JobPostingFilterValues) => void;
   onReset: () => void;
 }) {
@@ -41,7 +43,7 @@ export function JobPostingFilters({
           対象卒業年度
           <select value={values.graduationYear} onChange={(e) => update({ graduationYear: e.target.value })}>
             <option value="">指定なし</option>
-            {[2027, 2028, 2029].map((year) => (
+            {graduationYearOptions.map((year) => (
               <option key={year} value={year}>
                 {year}年卒
               </option>

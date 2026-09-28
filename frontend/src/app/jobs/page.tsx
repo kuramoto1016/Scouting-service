@@ -8,6 +8,12 @@ import { JobPostingFilters, JobPostingFilterValues } from "@/components/JobPosti
 
 const SKELETON_COUNT = 6;
 
+function graduationYearsFromJobs(jobs: JobPosting[]): number[] {
+  return Array.from(new Set(jobs.map((job) => job.graduation_year).filter((year): year is number => year !== null))).sort(
+    (a, b) => a - b
+  );
+}
+
 function valuesFromSearchParams(params: URLSearchParams): JobPostingFilterValues {
   return {
     graduationYear: params.get("graduation_year") ?? "",
@@ -41,6 +47,7 @@ function JobsPageContent() {
   const filterValues = useMemo(() => valuesFromSearchParams(searchParams), [searchParams]);
 
   const [jobs, setJobs] = useState<JobPosting[]>([]);
+  const [graduationYearOptions, setGraduationYearOptions] = useState<number[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loadingJobs, setLoadingJobs] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -93,6 +100,24 @@ function JobsPageContent() {
 
   useEffect(() => {
     let cancelled = false;
+
+    fetchJobPostings()
+      .then((res) => {
+        if (cancelled) return;
+        setGraduationYearOptions(graduationYearsFromJobs(res.job_postings));
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setGraduationYearOptions([]);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- guarded by `cancelled` below
     setLoadingJobs(true);
     fetchJobPostings({
@@ -127,7 +152,12 @@ function JobsPageContent() {
     <div>
       <h1 className="page-title">募集一覧</h1>
       <div className="jobs-layout">
-        <JobPostingFilters values={displayedFilterValues} onChange={handleFilterChange} onReset={handleReset} />
+        <JobPostingFilters
+          values={displayedFilterValues}
+          graduationYearOptions={graduationYearOptions}
+          onChange={handleFilterChange}
+          onReset={handleReset}
+        />
         <div className="jobs-results">
           {!loadingJobs && !error && <p className="muted jobs-count">募集中の求人 {totalCount}件</p>}
           {error && <p className="error-text">{error}</p>}
