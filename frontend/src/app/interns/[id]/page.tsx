@@ -5,7 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { fetchIntern, Intern, ApiError } from "@/lib/api";
-import { InternProfileDetails } from "@/components/InternProfileDetails";
+import { ProfileView } from "@/components/ProfileView";
+import { ProfileSidebar } from "@/components/ProfileSidebar";
 
 export default function InternDetailPage() {
   const params = useParams<{ id: string }>();
@@ -60,17 +61,21 @@ export default function InternDetailPage() {
       <Link href="/interns" className="muted" style={{ display: "inline-block", marginBottom: "1rem" }}>
         ← インターン生一覧に戻る
       </Link>
-      <h1 className="page-title">インターン生プロフィール</h1>
       {loadingIntern && <p className="muted">読み込み中...</p>}
       {error && <p className="error-text">{error}</p>}
       {intern && (
-        <div className="card">
-          <div className="card-title">{intern.name}</div>
-          <div className="card-meta">{intern.email}</div>
-          <InternProfileDetails intern={intern} />
-          <Link href={`/messages/intern/${intern.id}`} className="btn-primary" style={{ marginTop: "0.75rem" }}>
-            メッセージを送る
-          </Link>
+        <div className="profile-layout">
+          <ProfileSidebar
+            intern={intern}
+            nav={
+              <Link href={`/messages/intern/${intern.id}`} className="btn-primary" style={{ marginTop: "1rem" }}>
+                メッセージを送る
+              </Link>
+            }
+          />
+          <div className="profile-main">
+            <ProfileView intern={intern} editable={false} />
+          </div>
         </div>
       )}
     </div>

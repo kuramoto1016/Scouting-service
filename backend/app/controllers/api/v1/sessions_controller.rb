@@ -16,10 +16,20 @@ module Api
           render json: {
             token: JsonWebToken.encode({ sub: account.id, sub_type: klass.name }),
             account_type: klass.name.downcase,
-            account: account.as_json(except: %i[password_digest created_at updated_at])
+            account: serialize(account)
           }, status: :ok
         else
           render json: { error: "メールアドレスまたはパスワードが正しくありません" }, status: :unauthorized
+        end
+      end
+
+      private
+
+      def serialize(account)
+        if account.is_a?(Intern)
+          StudentProfileSerializer.new(account).as_json
+        else
+          account.as_json(except: %i[password_digest created_at updated_at])
         end
       end
     end

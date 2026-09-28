@@ -1,5 +1,5 @@
 :root {
-  --background: #f5f9ff;
+  --background: #fafbfc;
   --surface: #ffffff;
   --foreground: #1c2733;
   /* --accent / --accent-dark are button backgrounds that carry white text
@@ -10,17 +10,17 @@
   --accent-dark: #054a66;
   --accent-text: #066083;
   --accent-soft: #e6f6fd;
-  --border: #dce9f2;
+  --border: #dfe1e6;
   --muted: #55677a;
   --danger: #c8342a;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0b1420;
-    --surface: #121e2c;
+    --background: #14161a;
+    --surface: #1e2126;
     --foreground: #eaf2f8;
-    --border: #223245;
+    --border: #2c2f36;
     --muted: #a7b7c6;
     --accent-soft: #16303f;
     --danger: #ff6b60;
@@ -47,6 +47,7 @@ body {
   color: var(--foreground);
   background: var(--background);
   font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", Arial, Helvetica, sans-serif;
+  line-height: 1.7;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -142,6 +143,10 @@ select:focus-visible {
   max-width: 720px;
   margin: 0 auto;
   padding: 2rem 1.5rem;
+}
+
+.main-container:has(.jobs-layout) {
+  max-width: 1200px;
 }
 
 .page-title {
@@ -310,6 +315,11 @@ button[type="submit"]:disabled {
   font-size: 0.85rem;
 }
 
+.field-error-text {
+  color: var(--danger);
+  font-size: 0.78rem;
+}
+
 .muted {
   color: var(--muted);
   font-size: 0.9rem;
@@ -475,4 +485,514 @@ button[type="submit"]:disabled {
 .skill-picker-custom button:hover {
   border-color: var(--accent);
   color: var(--accent-text);
+}
+
+/* ---- Job postings list ---- */
+
+.jobs-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 1.75rem;
+  align-items: start;
+}
+
+.job-filters {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.1rem;
+  position: sticky;
+  top: 1rem;
+}
+
+.job-filters-toggle {
+  display: none;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  font-weight: bold;
+  font-size: 0.95rem;
+  padding: 0;
+  cursor: pointer;
+  color: var(--foreground);
+}
+
+.job-filters-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.job-filters-body label {
+  font-size: 0.85rem;
+}
+
+.jobs-count {
+  margin-bottom: 1rem;
+}
+
+.jobs-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+}
+
+.jobs-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 2.5rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.job-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  position: relative;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.job-card:hover {
+  box-shadow: 0 8px 20px rgba(8, 104, 143, 0.14);
+  transform: translateY(-3px);
+}
+
+.job-card-badge {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  background: var(--danger);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: bold;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  z-index: 1;
+}
+
+.job-card-badge-static {
+  position: static;
+  display: inline-block;
+  margin-bottom: 0.75rem;
+}
+
+.job-card-thumb {
+  height: 110px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  background: linear-gradient(135deg, var(--accent-soft), var(--accent));
+  color: white;
+}
+
+.job-card-thumb-icon {
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.job-card-thumb-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.job-card-body {
+  padding: 1rem 1.1rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex: 1;
+}
+
+.job-card-title {
+  font-size: 1rem;
+  font-weight: bold;
+  color: var(--foreground);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.4;
+  min-height: 2.8em;
+}
+
+.job-card-company {
+  font-size: 0.85rem;
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+.job-card-meta {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.job-card-location {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.job-card-tags {
+  margin-top: 0.3rem;
+}
+
+.job-card-skeleton {
+  pointer-events: none;
+}
+
+.skeleton-block {
+  background: linear-gradient(90deg, var(--border) 25%, var(--accent-soft) 50%, var(--border) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+.skeleton-line {
+  height: 0.85rem;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--border) 25%, var(--accent-soft) 50%, var(--border) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+.skeleton-line-title {
+  height: 1.1rem;
+  width: 80%;
+}
+
+.skeleton-line-short {
+  width: 55%;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@media (max-width: 1024px) {
+  .jobs-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .jobs-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .job-filters-toggle {
+    display: block;
+  }
+
+  .job-filters-body {
+    margin-top: 1rem;
+  }
+
+  .job-filters-body.collapsed {
+    display: none;
+  }
+
+  .jobs-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---- Student profile view ---- */
+
+.main-container:has(.profile-layout) {
+  max-width: 1000px;
+}
+
+.profile-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 1.75rem;
+  align-items: start;
+}
+
+.profile-sidebar {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;
+  position: sticky;
+  top: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.4rem;
+}
+
+.profile-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.profile-sidebar-name {
+  font-size: 1.05rem;
+}
+
+.profile-completion {
+  width: 100%;
+  margin-top: 0.75rem;
+}
+
+.profile-completion-bar {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+  margin-bottom: 0.4rem;
+}
+
+.profile-completion-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 999px;
+  transition: width 0.2s ease;
+}
+
+.profile-next-to-fill {
+  font-size: 0.8rem;
+  color: var(--accent-text);
+  margin-top: 0.5rem;
+}
+
+.profile-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  margin-top: 1rem;
+  text-align: left;
+}
+
+.profile-nav a {
+  font-size: 0.9rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: 6px;
+}
+
+.profile-nav a:hover {
+  background: var(--accent-soft);
+}
+
+.profile-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.profile-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem 1.4rem;
+}
+
+.profile-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.6rem;
+}
+
+.profile-section-title {
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+.profile-section-edit {
+  font-size: 0.85rem;
+  color: var(--accent-text);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.25rem 0.75rem;
+  background: var(--surface);
+}
+
+.profile-section-edit:hover {
+  border-color: var(--accent);
+}
+
+.profile-section-empty {
+  background: var(--background);
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.profile-view-toggle {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.profile-view-toggle button {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 999px;
+  padding: 0.45rem 1rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: inherit;
+}
+
+.profile-view-toggle button.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.desired-roles-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.desired-role-order-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+}
+
+.desired-role-order-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.desired-role-order-controls {
+  display: inline-flex;
+  gap: 0.3rem;
+  margin-left: auto;
+}
+
+.desired-role-order-controls button {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 6px;
+  width: 1.8rem;
+  height: 1.8rem;
+  cursor: pointer;
+}
+
+.desired-role-order-controls button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.skill-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.skill-level-badge {
+  font-size: 0.7rem;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 999px;
+  padding: 0.05rem 0.5rem;
+}
+
+.portfolio-item-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.portfolio-item-card {
+  background: var(--surface);
+}
+
+.skill-category-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.skill-category-tabs button {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 999px;
+  padding: 0.4rem 1rem;
+  cursor: pointer;
+  color: inherit;
+}
+
+.skill-category-tabs button.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.selected-skill-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.selected-skill-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.skill-level-toggle {
+  display: inline-flex;
+  gap: 0.3rem;
+}
+
+.skill-level-toggle button {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 999px;
+  padding: 0.25rem 0.7rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: inherit;
+}
+
+.skill-level-toggle button.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+@media (max-width: 720px) {
+  .profile-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-sidebar {
+    position: static;
+  }
 }

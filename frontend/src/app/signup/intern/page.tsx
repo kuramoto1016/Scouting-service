@@ -2,7 +2,7 @@
 
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { signupIntern, ApiError } from "@/lib/api";
+import { signupIntern, ApiError, homePathFor } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 
 export default function InternSignupPage() {
@@ -23,7 +23,7 @@ export default function InternSignupPage() {
       const res = await signupIntern({ name, email, password, bio });
       if (res.intern) {
         signIn(res.token, "intern", res.intern);
-        router.push("/mypage");
+        router.push(homePathFor("intern"));
       }
     } catch (err) {
       if (err instanceof ApiError) setErrors(err.errors);

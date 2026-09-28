@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { fetchInterns, Intern } from "@/lib/api";
-import { InternProfileDetails } from "@/components/InternProfileDetails";
+import { InternSummary } from "@/components/InternSummary";
 import { SUGGESTED_SKILLS } from "@/components/SkillPicker";
 import { SUGGESTED_JOB_TYPES } from "@/components/JobTypePicker";
 import { SUGGESTED_LOCATIONS } from "@/components/LocationPicker";
@@ -135,7 +135,7 @@ export default function InternsListPage() {
             {intern.name}
           </Link>
           <div className="card-meta">{intern.email}</div>
-          <InternProfileDetails intern={intern} />
+          <InternSummary intern={intern} />
           <div style={{ display: "flex", gap: "1rem" }}>
             <Link href={`/interns/${intern.id}`}>プロフィールを見る</Link>
             <Link href={`/messages/intern/${intern.id}`}>メッセージを送る</Link>

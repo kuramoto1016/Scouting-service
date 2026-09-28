@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import { homePathFor } from "@/lib/api";
 
 export function NavBar() {
   const { token, accountType, account, signOut, loading } = useAuth();
@@ -13,7 +14,7 @@ export function NavBar() {
     router.push("/");
   };
 
-  const brandHref = !loading && token ? (accountType === "company" ? "/interns" : "/jobs") : "/";
+  const brandHref = !loading && token && accountType ? homePathFor(accountType) : "/";
 
   return (
     <header className="navbar">
