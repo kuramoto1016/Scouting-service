@@ -39,8 +39,10 @@ export const JOB_CATEGORY_OPTIONS: JobCategory[] = ["backend", "frontend", "mobi
 export function formatDateRange(startsOn: string | null, endsOn: string | null): string | null {
   if (!startsOn && !endsOn) return null;
   const format = (iso: string) => {
-    const d = new Date(iso);
-    return `${d.getMonth() + 1}/${d.getDate()}`;
+    const [year, month, day] = iso.split("-");
+    if (year && month && day) return `${Number(month)}/${Number(day)}`;
+
+    return iso;
   };
   if (startsOn && endsOn) return `${format(startsOn)}〜${format(endsOn)}`;
   if (startsOn) return `${format(startsOn)}〜`;
