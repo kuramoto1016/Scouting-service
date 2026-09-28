@@ -51,12 +51,8 @@ function JobsPageContent() {
   const [totalCount, setTotalCount] = useState(0);
   const [loadingJobs, setLoadingJobs] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [locationInputState, setLocationInputState] = useState({
-    value: filterValues.location,
-    urlLocation: filterValues.location,
-  });
-  const locationInput =
-    locationInputState.urlLocation === filterValues.location ? locationInputState.value : filterValues.location;
+  const [localLocationDraft, setLocalLocationDraft] = useState<string | null>(null);
+  const locationInput = localLocationDraft ?? filterValues.location;
 
   const displayedFilterValues = useMemo(
     () => ({ ...filterValues, location: locationInput }),
@@ -74,29 +70,31 @@ function JobsPageContent() {
   const handleFilterChange = useCallback(
     (next: JobPostingFilterValues) => {
       if (next.location !== locationInput) {
-        setLocationInputState({ value: next.location, urlLocation: filterValues.location });
+        setLocalLocationDraft(next.location);
         return;
       }
 
       replaceFilters(next);
     },
-    [filterValues.location, locationInput, replaceFilters]
+    [locationInput, replaceFilters]
   );
 
   const handleReset = useCallback(() => {
-    setLocationInputState({ value: "", urlLocation: "" });
+    setLocalLocationDraft(null);
     router.replace("/jobs");
   }, [router]);
 
   useEffect(() => {
-    if (locationInput === filterValues.location) return;
+    if (localLocationDraft === null || localLocationDraft === filterValues.location) return;
 
+    const draft = localLocationDraft;
     const timeoutId = window.setTimeout(() => {
-      replaceFilters({ ...filterValues, location: locationInput });
+      replaceFilters({ ...filterValues, location: draft });
+      setLocalLocationDraft(null);
     }, 300);
 
     return () => window.clearTimeout(timeoutId);
-  }, [filterValues, locationInput, replaceFilters]);
+  }, [filterValues, localLocationDraft, replaceFilters]);
 
   useEffect(() => {
     let cancelled = false;
