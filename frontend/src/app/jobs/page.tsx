@@ -47,7 +47,14 @@ function JobsPageContent() {
   const filterValues = useMemo(() => valuesFromSearchParams(searchParams), [searchParams]);
 
   const [jobs, setJobs] = useState<JobPosting[]>([]);
-  const [graduationYearOptions, setGraduationYearOptions] = useState<number[]>([]);
+  const [fetchedGraduationYearOptions, setFetchedGraduationYearOptions] = useState<number[]>([]);
+  const graduationYearOptions = useMemo(() => {
+    const selectedYear = filterValues.graduationYear ? Number(filterValues.graduationYear) : null;
+    if (selectedYear === null || fetchedGraduationYearOptions.includes(selectedYear)) {
+      return fetchedGraduationYearOptions;
+    }
+    return [...fetchedGraduationYearOptions, selectedYear].sort((a, b) => a - b);
+  }, [fetchedGraduationYearOptions, filterValues.graduationYear]);
   const [totalCount, setTotalCount] = useState(0);
   const [loadingJobs, setLoadingJobs] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -102,11 +109,11 @@ function JobsPageContent() {
     fetchJobPostings()
       .then((res) => {
         if (cancelled) return;
-        setGraduationYearOptions(graduationYearsFromJobs(res.job_postings));
+        setFetchedGraduationYearOptions(graduationYearsFromJobs(res.job_postings));
       })
       .catch(() => {
         if (cancelled) return;
-        setGraduationYearOptions([]);
+        setFetchedGraduationYearOptions([]);
       });
 
     return () => {
