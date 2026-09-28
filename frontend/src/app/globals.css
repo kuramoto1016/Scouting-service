@@ -1,5 +1,5 @@
 :root {
-  --background: #f4f5f7;
+  --background: #fafbfc;
   --surface: #ffffff;
   --foreground: #1c2733;
   /* --accent / --accent-dark are button backgrounds that carry white text
@@ -808,7 +808,8 @@ button[type="submit"]:disabled {
 }
 
 .profile-section {
-  background: var(--accent-soft);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 1.25rem 1.4rem;
 }
@@ -839,7 +840,7 @@ button[type="submit"]:disabled {
 }
 
 .profile-section-empty {
-  background: var(--surface);
+  background: var(--background);
   border: 1px dashed var(--border);
   border-radius: 8px;
   padding: 1rem;
