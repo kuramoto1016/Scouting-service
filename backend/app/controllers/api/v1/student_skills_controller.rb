@@ -18,7 +18,7 @@ module Api
         end
         render json: StudentProfileSerializer.new(@intern).as_json
       rescue ActiveRecord::RecordInvalid => e
-        render json: { errors: e.record.errors.full_messages }, status: :unprocessable_entity
+        render_validation_errors(e.record.errors)
       end
 
       private

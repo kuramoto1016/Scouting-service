@@ -12,7 +12,7 @@ module Api
         if item.save
           render json: StudentProfileSerializer.new(@intern).as_json, status: :created
         else
-          render json: { errors: item.errors.full_messages }, status: :unprocessable_entity
+          render_validation_errors(item.errors)
         end
       end
 
@@ -20,7 +20,7 @@ module Api
         if @portfolio_item.update(portfolio_item_params)
           render json: StudentProfileSerializer.new(@intern).as_json
         else
-          render json: { errors: @portfolio_item.errors.full_messages }, status: :unprocessable_entity
+          render_validation_errors(@portfolio_item.errors)
         end
       end
 

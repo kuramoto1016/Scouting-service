@@ -3,6 +3,8 @@
 import { useState, FormEvent } from "react";
 import { PortfolioContext, PortfolioItemInput } from "@/lib/api";
 import { PORTFOLIO_CONTEXT_LABELS } from "@/lib/profile-labels";
+import { useUnsavedChangesGuard } from "@/lib/useUnsavedChangesGuard";
+import { FieldError } from "@/components/FieldError";
 
 const CONTEXT_OPTIONS: PortfolioContext[] = ["class_project", "personal", "hackathon", "intern", "other"];
 
@@ -22,12 +24,14 @@ export function PortfolioItemForm({
   onCancel,
   submitting,
   errors,
+  fieldErrors = {},
 }: {
   initial?: PortfolioItemFormInitial;
   onSubmit: (input: PortfolioItemInput) => void;
   onCancel: () => void;
   submitting: boolean;
   errors: string[];
+  fieldErrors?: Record<string, string[]>;
 }) {
   const [title, setTitle] = useState(initial?.title ?? "");
   const [summary, setSummary] = useState(initial?.summary ?? "");
@@ -36,6 +40,21 @@ export function PortfolioItemForm({
   const [highlights, setHighlights] = useState(initial?.highlights ?? "");
   const [githubUrl, setGithubUrl] = useState(initial?.github_url ?? "");
   const [otherUrl, setOtherUrl] = useState(initial?.other_url ?? "");
+
+  const isDirty =
+    title !== (initial?.title ?? "") ||
+    summary !== (initial?.summary ?? "") ||
+    context !== (initial?.context ?? "personal") ||
+    techStackInput !== (initial?.tech_stack ?? []).join(", ") ||
+    highlights !== (initial?.highlights ?? "") ||
+    githubUrl !== (initial?.github_url ?? "") ||
+    otherUrl !== (initial?.other_url ?? "");
+  const { confirmDiscard } = useUnsavedChangesGuard(isDirty);
+
+  const handleCancel = () => {
+    if (!confirmDiscard()) return;
+    onCancel();
+  };
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -58,6 +77,7 @@ export function PortfolioItemForm({
       <label>
         タイトル
         <input value={title} onChange={(e) => setTitle(e.target.value)} required maxLength={100} />
+        <FieldError messages={fieldErrors.title} />
       </label>
       <label>
         取り組んだ場所
@@ -72,6 +92,7 @@ export function PortfolioItemForm({
       <label>
         概要
         <textarea value={summary} onChange={(e) => setSummary(e.target.value)} maxLength={1000} />
+        <FieldError messages={fieldErrors.summary} />
       </label>
       <label>
         技術スタック（カンマ区切り）
@@ -84,6 +105,7 @@ export function PortfolioItemForm({
       <label>
         工夫した点
         <textarea value={highlights} onChange={(e) => setHighlights(e.target.value)} maxLength={1000} />
+        <FieldError messages={fieldErrors.highlights} />
       </label>
       <label>
         GitHubリンク
@@ -93,6 +115,7 @@ export function PortfolioItemForm({
           onChange={(e) => setGithubUrl(e.target.value)}
           placeholder="https://github.com/..."
         />
+        <FieldError messages={fieldErrors.github_url} />
       </label>
       <label>
         その他のリンク
@@ -102,6 +125,7 @@ export function PortfolioItemForm({
           onChange={(e) => setOtherUrl(e.target.value)}
           placeholder="https://..."
         />
+        <FieldError messages={fieldErrors.other_url} />
       </label>
       {errors.length > 0 && (
         <div className="error-text">
@@ -114,7 +138,7 @@ export function PortfolioItemForm({
         <button type="submit" disabled={submitting}>
           保存する
         </button>
-        <button type="button" className="btn-secondary" onClick={onCancel}>
+        <button type="button" className="btn-secondary" onClick={handleCancel}>
           キャンセル
         </button>
       </div>

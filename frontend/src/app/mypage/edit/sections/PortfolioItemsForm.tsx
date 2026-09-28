@@ -25,6 +25,7 @@ export function PortfolioItemsForm({ intern }: { intern: Intern }) {
   const [items, setItems] = useState<PortfolioItem[]>(intern.portfolio_items);
   const [editingId, setEditingId] = useState<number | "new" | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [submitting, setSubmitting] = useState(false);
 
   const applyUpdate = (updated: Intern) => {
@@ -35,13 +36,19 @@ export function PortfolioItemsForm({ intern }: { intern: Intern }) {
   const handleCreate = async (input: PortfolioItemInput) => {
     if (!token) return;
     setErrors([]);
+    setFieldErrors({});
     setSubmitting(true);
     try {
       const updated = await createPortfolioItem(token, intern.id, input);
       applyUpdate(updated);
       setEditingId(null);
     } catch (err) {
-      setErrors(err instanceof ApiError ? err.errors : ["追加に失敗しました"]);
+      if (err instanceof ApiError) {
+        setErrors(err.errors);
+        setFieldErrors(err.fieldErrors);
+      } else {
+        setErrors(["追加に失敗しました"]);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -50,13 +57,19 @@ export function PortfolioItemsForm({ intern }: { intern: Intern }) {
   const handleUpdate = async (itemId: number, input: PortfolioItemInput) => {
     if (!token) return;
     setErrors([]);
+    setFieldErrors({});
     setSubmitting(true);
     try {
       const updated = await updatePortfolioItem(token, intern.id, itemId, input);
       applyUpdate(updated);
       setEditingId(null);
     } catch (err) {
-      setErrors(err instanceof ApiError ? err.errors : ["更新に失敗しました"]);
+      if (err instanceof ApiError) {
+        setErrors(err.errors);
+        setFieldErrors(err.fieldErrors);
+      } else {
+        setErrors(["更新に失敗しました"]);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -100,6 +113,7 @@ export function PortfolioItemsForm({ intern }: { intern: Intern }) {
         onCancel={() => setEditingId(null)}
         submitting={submitting}
         errors={errors}
+        fieldErrors={fieldErrors}
       />
     );
   }
@@ -113,6 +127,7 @@ export function PortfolioItemsForm({ intern }: { intern: Intern }) {
         onCancel={() => setEditingId(null)}
         submitting={submitting}
         errors={errors}
+        fieldErrors={fieldErrors}
       />
     );
   }

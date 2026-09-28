@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { updateBasicInfo, ApiError, Intern, SchoolType } from "@/lib/api";
 import { SCHOOL_TYPE_LABELS } from "@/lib/profile-labels";
+import { useUnsavedChangesGuard } from "@/lib/useUnsavedChangesGuard";
+import { FieldError } from "@/components/FieldError";
 
 const SCHOOL_TYPE_OPTIONS: SchoolType[] = [
   "university",
@@ -25,12 +27,26 @@ export function BasicInfoForm({ intern }: { intern: Intern }) {
     intern.basic_info.graduation_year_month?.slice(0, 7) ?? ""
   );
   const [errors, setErrors] = useState<string[]>([]);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [submitting, setSubmitting] = useState(false);
+
+  const isDirty =
+    schoolType !== (intern.basic_info.school_type ?? "") ||
+    schoolName !== (intern.basic_info.school_name ?? "") ||
+    department !== (intern.basic_info.department ?? "") ||
+    graduationYearMonth !== (intern.basic_info.graduation_year_month?.slice(0, 7) ?? "");
+  const { confirmDiscard } = useUnsavedChangesGuard(isDirty);
+
+  const handleCancel = () => {
+    if (!confirmDiscard()) return;
+    router.push("/mypage");
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!token) return;
     setErrors([]);
+    setFieldErrors({});
     setSubmitting(true);
     try {
       const updated = await updateBasicInfo(token, intern.id, {
@@ -42,7 +58,12 @@ export function BasicInfoForm({ intern }: { intern: Intern }) {
       updateAccount(updated, token);
       router.push("/mypage");
     } catch (err) {
-      setErrors(err instanceof ApiError ? err.errors : ["更新に失敗しました"]);
+      if (err instanceof ApiError) {
+        setErrors(err.errors);
+        setFieldErrors(err.fieldErrors);
+      } else {
+        setErrors(["更新に失敗しました"]);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -64,14 +85,17 @@ export function BasicInfoForm({ intern }: { intern: Intern }) {
       <label>
         学校名
         <input value={schoolName} onChange={(e) => setSchoolName(e.target.value)} placeholder="例: ○○大学" />
+        <FieldError messages={fieldErrors.school_name} />
       </label>
       <label>
         学部・学科
         <input value={department} onChange={(e) => setDepartment(e.target.value)} placeholder="例: 工学部情報学科" />
+        <FieldError messages={fieldErrors.department} />
       </label>
       <label>
         卒業予定年月
         <input type="month" value={graduationYearMonth} onChange={(e) => setGraduationYearMonth(e.target.value)} />
+        <FieldError messages={fieldErrors.graduation_year_month} />
       </label>
       {errors.length > 0 && (
         <div className="error-text">
@@ -84,7 +108,7 @@ export function BasicInfoForm({ intern }: { intern: Intern }) {
         <button type="submit" disabled={submitting}>
           保存する
         </button>
-        <button type="button" className="btn-secondary" onClick={() => router.push("/mypage")}>
+        <button type="button" className="btn-secondary" onClick={handleCancel}>
           キャンセル
         </button>
       </div>

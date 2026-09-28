@@ -4,6 +4,7 @@ import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { updateSelfPr, ApiError, Intern } from "@/lib/api";
+import { useUnsavedChangesGuard } from "@/lib/useUnsavedChangesGuard";
 
 export function SelfPrForm({ intern }: { intern: Intern }) {
   const { token, updateAccount } = useAuth();
@@ -13,6 +14,14 @@ export function SelfPrForm({ intern }: { intern: Intern }) {
   const [careerGoal, setCareerGoal] = useState(intern.self_pr.career_goal ?? "");
   const [errors, setErrors] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
+
+  const isDirty = bio !== (intern.self_pr.bio ?? "") || careerGoal !== (intern.self_pr.career_goal ?? "");
+  const { confirmDiscard } = useUnsavedChangesGuard(isDirty);
+
+  const handleCancel = () => {
+    if (!confirmDiscard()) return;
+    router.push("/mypage");
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -59,7 +68,7 @@ export function SelfPrForm({ intern }: { intern: Intern }) {
         <button type="submit" disabled={submitting}>
           保存する
         </button>
-        <button type="button" className="btn-secondary" onClick={() => router.push("/mypage")}>
+        <button type="button" className="btn-secondary" onClick={handleCancel}>
           キャンセル
         </button>
       </div>

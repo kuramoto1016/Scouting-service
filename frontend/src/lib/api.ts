@@ -130,11 +130,14 @@ export interface JobPostingListResponse {
 export class ApiError extends Error {
   status: number;
   errors: string[];
+  /** Field name -> messages, when the backend provides per-field validation errors. */
+  fieldErrors: Record<string, string[]>;
 
-  constructor(status: number, errors: string[]) {
+  constructor(status: number, errors: string[], fieldErrors: Record<string, string[]> = {}) {
     super(errors.join(", "));
     this.status = status;
     this.errors = errors;
+    this.fieldErrors = fieldErrors;
   }
 }
 
@@ -161,7 +164,7 @@ async function request<T>(
 
   if (!res.ok) {
     const errors: string[] = data.errors ?? (data.error ? [data.error] : ["エラーが発生しました"]);
-    throw new ApiError(res.status, errors);
+    throw new ApiError(res.status, errors, data.field_errors ?? {});
   }
 
   return data as T;

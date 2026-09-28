@@ -8,6 +8,16 @@ import { DesiredRolePicker } from "@/components/DesiredRolePicker";
 import { LocationPicker } from "@/components/LocationPicker";
 import { JobHuntingAxisPicker } from "@/components/JobHuntingAxisPicker";
 import { TagPickerHandle } from "@/components/TagPicker";
+import { useUnsavedChangesGuard } from "@/lib/useUnsavedChangesGuard";
+
+function sortedRolesKey(roles: DesiredRole[]): string {
+  return JSON.stringify(
+    roles
+      .slice()
+      .sort((a, b) => a.priority - b.priority)
+      .map((r) => `${r.priority}:${r.role}`)
+  );
+}
 
 export function DesiredConditionsForm({ intern }: { intern: Intern }) {
   const { token, updateAccount } = useAuth();
@@ -19,6 +29,17 @@ export function DesiredConditionsForm({ intern }: { intern: Intern }) {
   const [errors, setErrors] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const axisPickerRef = useRef<TagPickerHandle>(null);
+
+  const isDirty =
+    sortedRolesKey(desiredRoles) !== sortedRolesKey(intern.desired_conditions.desired_roles) ||
+    desiredLocation !== (intern.desired_conditions.desired_location ?? "") ||
+    jobHuntingAxes !== (intern.desired_conditions.job_hunting_axes ?? "");
+  const { confirmDiscard } = useUnsavedChangesGuard(isDirty);
+
+  const handleCancel = () => {
+    if (!confirmDiscard()) return;
+    router.push("/mypage");
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -66,7 +87,7 @@ export function DesiredConditionsForm({ intern }: { intern: Intern }) {
         <button type="submit" disabled={submitting}>
           保存する
         </button>
-        <button type="button" className="btn-secondary" onClick={() => router.push("/mypage")}>
+        <button type="button" className="btn-secondary" onClick={handleCancel}>
           キャンセル
         </button>
       </div>

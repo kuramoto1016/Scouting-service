@@ -40,4 +40,14 @@ class ApplicationController < ActionController::API
   def render_not_found
     render json: { error: "リソースが見つかりません" }, status: :not_found
   end
+
+  # Renders both a flat `errors` array (for simple error banners) and a
+  # `field_errors` hash keyed by attribute name (so frontends can show a
+  # validation message directly under the relevant field).
+  def render_validation_errors(errors)
+    render json: {
+      errors: errors.full_messages,
+      field_errors: errors.messages.transform_keys(&:to_s)
+    }, status: :unprocessable_entity
+  end
 end

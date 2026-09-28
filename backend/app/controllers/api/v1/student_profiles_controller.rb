@@ -32,7 +32,7 @@ module Api
         if @profile.update(permitted)
           render json: StudentProfileSerializer.new(@intern).as_json
         else
-          render json: { errors: @profile.errors.full_messages }, status: :unprocessable_entity
+          render_validation_errors(@profile.errors)
         end
       end
 
@@ -49,7 +49,7 @@ module Api
         end
         render json: StudentProfileSerializer.new(@intern).as_json
       rescue ActiveRecord::RecordInvalid => e
-        render json: { errors: e.record.errors.full_messages }, status: :unprocessable_entity
+        render_validation_errors(e.record.errors)
       end
 
       def section_params(section)

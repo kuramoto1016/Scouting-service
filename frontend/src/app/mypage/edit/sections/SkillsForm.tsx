@@ -5,16 +5,33 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { updateSkills, ApiError, Intern, StudentSkillInput } from "@/lib/api";
 import { SkillEditor } from "@/components/SkillEditor";
+import { useUnsavedChangesGuard } from "@/lib/useUnsavedChangesGuard";
+
+function skillsKey(skills: StudentSkillInput[]): string {
+  return JSON.stringify(
+    skills
+      .slice()
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((s) => `${s.name}:${s.category}:${s.level}`)
+  );
+}
 
 export function SkillsForm({ intern }: { intern: Intern }) {
   const { token, updateAccount } = useAuth();
   const router = useRouter();
 
-  const [skills, setSkills] = useState<StudentSkillInput[]>(
-    intern.skills.map((s) => ({ name: s.name, category: s.category, level: s.level }))
-  );
+  const initialSkills = intern.skills.map((s) => ({ name: s.name, category: s.category, level: s.level }));
+  const [skills, setSkills] = useState<StudentSkillInput[]>(initialSkills);
   const [errors, setErrors] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
+
+  const isDirty = skillsKey(skills) !== skillsKey(initialSkills);
+  const { confirmDiscard } = useUnsavedChangesGuard(isDirty);
+
+  const handleCancel = () => {
+    if (!confirmDiscard()) return;
+    router.push("/mypage");
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -46,7 +63,7 @@ export function SkillsForm({ intern }: { intern: Intern }) {
         <button type="submit" disabled={submitting}>
           保存する
         </button>
-        <button type="button" className="btn-secondary" onClick={() => router.push("/mypage")}>
+        <button type="button" className="btn-secondary" onClick={handleCancel}>
           キャンセル
         </button>
       </div>
