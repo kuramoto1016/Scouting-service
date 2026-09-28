@@ -73,6 +73,24 @@ a.link-accent:hover {
   text-decoration: underline;
 }
 
+button.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+button.link-button:hover {
+  text-decoration: underline;
+}
+
+button.link-button:disabled {
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
 a:focus-visible,
 button:focus-visible,
 input:focus-visible,
@@ -358,6 +376,21 @@ button[type="submit"]:disabled {
 
 .message-bubble.mine .message-meta {
   color: rgba(255, 255, 255, 0.75);
+}
+
+.message-sender {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent-text);
+  margin-bottom: 0.15rem;
+}
+
+.message-bubble.mine .message-sender {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.message-participants {
+  margin-bottom: 1rem;
 }
 
 .message-form {

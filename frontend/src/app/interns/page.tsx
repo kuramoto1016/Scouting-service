@@ -4,7 +4,7 @@ import { useEffect, useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
-import { fetchInterns, Intern } from "@/lib/api";
+import { fetchInterns, createConversation, Intern, ApiError } from "@/lib/api";
 import { InternSummary } from "@/components/InternSummary";
 import { SUGGESTED_SKILLS } from "@/components/SkillPicker";
 import { SUGGESTED_JOB_TYPES } from "@/components/JobTypePicker";
@@ -21,6 +21,9 @@ export default function InternsListPage() {
   const [jobType, setJobType] = useState("");
   const [location, setLocation] = useState("");
   const [appliedKeyword, setAppliedKeyword] = useState("");
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [startingConversation, setStartingConversation] = useState(false);
+  const [conversationError, setConversationError] = useState<string | null>(null);
 
   useEffect(() => {
     if (loading) return;
@@ -69,6 +72,38 @@ export default function InternsListPage() {
     setSkill("");
     setJobType("");
     setLocation("");
+  };
+
+  const toggleSelected = (internId: number) => {
+    setSelectedIds((prev) =>
+      prev.includes(internId) ? prev.filter((id) => id !== internId) : [...prev, internId]
+    );
+  };
+
+  const handleStartGroupConversation = async () => {
+    if (!token || selectedIds.length === 0) return;
+    setStartingConversation(true);
+    setConversationError(null);
+    try {
+      const conversation = await createConversation(token, selectedIds);
+      router.push(`/messages/${conversation.id}`);
+    } catch (err) {
+      setConversationError(err instanceof ApiError ? err.errors.join(", ") : "会話の開始に失敗しました");
+      setStartingConversation(false);
+    }
+  };
+
+  const handleStartSingleConversation = async (internId: number) => {
+    if (!token) return;
+    setStartingConversation(true);
+    setConversationError(null);
+    try {
+      const conversation = await createConversation(token, [internId]);
+      router.push(`/messages/${conversation.id}`);
+    } catch (err) {
+      setConversationError(err instanceof ApiError ? err.errors.join(", ") : "会話の開始に失敗しました");
+      setStartingConversation(false);
+    }
   };
 
   if (loading || !token || accountType !== "company") return null;
@@ -127,10 +162,31 @@ export default function InternsListPage() {
         </div>
       </form>
 
+      {selectedIds.length > 0 && (
+        <div className="card" style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+          <span>{selectedIds.length}人を選択中</span>
+          <button type="button" className="btn-primary" onClick={handleStartGroupConversation} disabled={startingConversation}>
+            選択したインターン生にグループメッセージを送る
+          </button>
+          <button type="button" className="btn-secondary" onClick={() => setSelectedIds([])}>
+            選択を解除
+          </button>
+        </div>
+      )}
+      {conversationError && <p className="error-text">{conversationError}</p>}
+
       {loadingInterns && <p className="muted">読み込み中...</p>}
       {!loadingInterns && interns.length === 0 && <p className="muted">該当するインターン生が見つかりませんでした。</p>}
       {interns.map((intern) => (
         <div key={intern.id} className="card">
+          <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
+            <input
+              type="checkbox"
+              checked={selectedIds.includes(intern.id)}
+              onChange={() => toggleSelected(intern.id)}
+            />
+            グループに追加
+          </label>
           <Link href={`/interns/${intern.id}`} className="card-title card-title-link">
             {intern.name}
           </Link>
@@ -138,7 +194,14 @@ export default function InternsListPage() {
           <InternSummary intern={intern} />
           <div style={{ display: "flex", gap: "1rem" }}>
             <Link href={`/interns/${intern.id}`}>プロフィールを見る</Link>
-            <Link href={`/messages/intern/${intern.id}`}>メッセージを送る</Link>
+            <button
+              type="button"
+              className="link-button"
+              onClick={() => handleStartSingleConversation(intern.id)}
+              disabled={startingConversation}
+            >
+              メッセージを送る
+            </button>
           </div>
         </div>
       ))}

@@ -2,22 +2,23 @@ module Api
   module V1
     class MessagesController < ApplicationController
       before_action :authenticate_request!
-      before_action :set_conversation_partner
+      before_action :set_conversation
+      before_action :authorize_participant!
 
-      # GET /api/v1/interns/:intern_id/messages (as company)
-      # GET /api/v1/companies/:company_id/messages (as intern)
+      # GET /api/v1/conversations/:conversation_id/messages
       def index
-        messages = Message.where(company: @company, intern: @intern).ordered
-        render json: messages.as_json(only: %i[id sender_type body created_at])
+        messages = @conversation.messages.includes(:sender_intern).ordered
+        render json: messages.map { |m| message_json(m) }
       end
 
+      # POST /api/v1/conversations/:conversation_id/messages
       def create
-        message = Message.new(message_params.merge(company: @company, intern: @intern, sender_type: sender_type))
+        message = @conversation.messages.new(message_params.merge(sender_type: sender_type, sender_intern: sender_intern))
 
         if message.save
-          render json: message.as_json(only: %i[id sender_type body created_at]), status: :created
+          render json: message_json(message), status: :created
         else
-          render json: { errors: message.errors.full_messages }, status: :unprocessable_entity
+          render_validation_errors(message.errors)
         end
       end
 
@@ -31,16 +32,29 @@ module Api
         current_account_type.downcase
       end
 
-      def set_conversation_partner
-        if current_account.is_a?(Company)
-          @company = current_account
-          @intern = Intern.find(params[:intern_id])
-        elsif current_account.is_a?(Intern)
-          @intern = current_account
-          @company = Company.find(params[:company_id])
-        else
-          render_unauthorized
-        end
+      def sender_intern
+        current_account.is_a?(Intern) ? current_account : nil
+      end
+
+      def set_conversation
+        @conversation = Conversation.includes(:interns).find(params[:conversation_id])
+      end
+
+      def authorize_participant!
+        return if current_account.is_a?(Company) && @conversation.company_id == current_account.id
+        return if current_account.is_a?(Intern) && @conversation.interns.exists?(id: current_account.id)
+
+        render_unauthorized
+      end
+
+      def message_json(message)
+        {
+          id: message.id,
+          sender_type: message.sender_type,
+          sender_intern: message.sender_intern && { id: message.sender_intern.id, name: message.sender_intern.name },
+          body: message.body,
+          created_at: message.created_at
+        }
       end
     end
   end

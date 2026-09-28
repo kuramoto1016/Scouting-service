@@ -92,6 +92,7 @@ export interface Company {
 export interface Message {
   id: number;
   sender_type: AccountType;
+  sender_intern: { id: number; name: string } | null;
   body: string;
   created_at: string;
 }
@@ -318,39 +319,55 @@ export function reorderPortfolioItems(token: string, internId: number, orderedId
   });
 }
 
-export interface ConversationPartner {
+export interface ConversationParticipant {
   id: number;
   name: string;
-  email: string;
+}
+
+export interface Conversation {
+  id: number;
+  title: string;
+  interns: ConversationParticipant[];
+  company?: { id: number; name: string };
 }
 
 export function fetchConversations(token: string) {
-  return request<ConversationPartner[]>("/api/v1/conversations", { token });
+  return request<Conversation[]>("/api/v1/conversations", { token });
 }
 
-export function fetchMessages(
-  token: string,
-  partnerType: AccountType,
-  partnerId: number
-) {
-  const path =
-    partnerType === "intern"
-      ? `/api/v1/interns/${partnerId}/messages`
-      : `/api/v1/companies/${partnerId}/messages`;
-  return request<Message[]>(path, { token });
+export function fetchConversation(token: string, conversationId: number) {
+  return request<Conversation>(`/api/v1/conversations/${conversationId}`, { token });
 }
 
-export function sendMessage(
+export function createConversation(token: string, internIds: number[], title?: string) {
+  return request<Conversation>("/api/v1/conversations", {
+    method: "POST",
+    token,
+    body: JSON.stringify({ intern_ids: internIds, title }),
+  });
+}
+
+export function updateConversation(
   token: string,
-  partnerType: AccountType,
-  partnerId: number,
-  body: string
+  conversationId: number,
+  params: { title?: string; internIds?: number[] }
 ) {
-  const path =
-    partnerType === "intern"
-      ? `/api/v1/interns/${partnerId}/messages`
-      : `/api/v1/companies/${partnerId}/messages`;
-  return request<Message>(path, {
+  return request<Conversation>(`/api/v1/conversations/${conversationId}`, {
+    method: "PATCH",
+    token,
+    body: JSON.stringify({
+      ...(params.title !== undefined ? { title: params.title } : {}),
+      ...(params.internIds !== undefined ? { intern_ids: params.internIds } : {}),
+    }),
+  });
+}
+
+export function fetchMessages(token: string, conversationId: number) {
+  return request<Message[]>(`/api/v1/conversations/${conversationId}/messages`, { token });
+}
+
+export function sendMessage(token: string, conversationId: number, body: string) {
+  return request<Message>(`/api/v1/conversations/${conversationId}/messages`, {
     method: "POST",
     token,
     body: JSON.stringify({ message: { body } }),

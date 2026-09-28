@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_28_021724) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_28_030003) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -22,6 +22,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_021724) do
     t.string "password_digest", null: false
     t.datetime "updated_at", null: false
     t.index ["email"], name: "index_companies_on_email", unique: true
+  end
+
+  create_table "conversation_participants", force: :cascade do |t|
+    t.bigint "conversation_id", null: false
+    t.datetime "created_at", null: false
+    t.bigint "intern_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["conversation_id", "intern_id"], name: "index_participants_on_conversation_and_intern", unique: true
+    t.index ["conversation_id"], name: "index_conversation_participants_on_conversation_id"
+    t.index ["intern_id"], name: "index_conversation_participants_on_intern_id"
+  end
+
+  create_table "conversations", force: :cascade do |t|
+    t.bigint "company_id", null: false
+    t.datetime "created_at", null: false
+    t.string "title"
+    t.datetime "updated_at", null: false
+    t.index ["company_id"], name: "index_conversations_on_company_id"
   end
 
   create_table "interns", force: :cascade do |t|
@@ -55,14 +73,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_021724) do
 
   create_table "messages", force: :cascade do |t|
     t.text "body", null: false
-    t.integer "company_id", null: false
+    t.bigint "conversation_id", null: false
     t.datetime "created_at", null: false
-    t.integer "intern_id", null: false
+    t.bigint "sender_intern_id"
     t.string "sender_type", null: false
     t.datetime "updated_at", null: false
-    t.index ["company_id", "intern_id"], name: "index_messages_on_company_id_and_intern_id"
-    t.index ["company_id"], name: "index_messages_on_company_id"
-    t.index ["intern_id"], name: "index_messages_on_intern_id"
+    t.index ["conversation_id"], name: "index_messages_on_conversation_id"
+    t.index ["sender_intern_id"], name: "index_messages_on_sender_intern_id"
   end
 
   create_table "portfolio_items", force: :cascade do |t|
@@ -118,9 +135,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_021724) do
     t.index ["student_profile_id"], name: "index_student_skills_on_student_profile_id"
   end
 
+  add_foreign_key "conversation_participants", "conversations"
+  add_foreign_key "conversation_participants", "interns"
+  add_foreign_key "conversations", "companies"
   add_foreign_key "job_postings", "companies"
-  add_foreign_key "messages", "companies"
-  add_foreign_key "messages", "interns"
+  add_foreign_key "messages", "conversations"
+  add_foreign_key "messages", "interns", column: "sender_intern_id"
   add_foreign_key "portfolio_items", "student_profiles"
   add_foreign_key "student_desired_roles", "student_profiles"
   add_foreign_key "student_profiles", "interns"

@@ -1,7 +1,9 @@
 class Intern < ApplicationRecord
   has_secure_password
 
-  has_many :messages, dependent: :destroy
+  has_many :conversation_participants, dependent: :destroy
+  has_many :conversations, through: :conversation_participants
+  has_many :sent_messages, class_name: "Message", foreign_key: :sender_intern_id, dependent: :nullify, inverse_of: :sender_intern
   has_one :student_profile, dependent: :destroy
 
   EMAIL_REGEXP = /\A[^@\s]+@[^@\s]+\z/

@@ -4,13 +4,13 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
-import { fetchConversations, Intern, Company, ConversationPartner } from "@/lib/api";
+import { fetchConversations, Intern, Company, Conversation } from "@/lib/api";
 import { StudentMyPage } from "./StudentMyPage";
 
 export default function MyPage() {
   const { token, accountType, account, loading } = useAuth();
   const router = useRouter();
-  const [conversations, setConversations] = useState<ConversationPartner[]>([]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loadingConversations, setLoadingConversations] = useState(true);
 
   useEffect(() => {
@@ -40,9 +40,11 @@ export default function MyPage() {
             <p className="muted">まだメッセージのやり取りがありません。</p>
           )}
           {conversations.map((c) => (
-            <Link key={c.id} href={`/messages/company/${c.id}`} className="card" style={{ display: "block" }}>
-              <div className="card-title">{c.name}</div>
-              <div className="card-meta">{c.email}</div>
+            <Link key={c.id} href={`/messages/${c.id}`} className="card" style={{ display: "block" }}>
+              <div className="card-title">{c.company?.name}</div>
+              {c.interns.length > 1 && (
+                <div className="card-meta">参加者: {c.interns.map((i) => i.name).join("、")}</div>
+              )}
             </Link>
           ))}
         </div>
@@ -77,9 +79,8 @@ export default function MyPage() {
         <p className="muted">まだメッセージのやり取りがありません。</p>
       )}
       {conversations.map((c) => (
-        <Link key={c.id} href={`/messages/intern/${c.id}`} className="card" style={{ display: "block" }}>
-          <div className="card-title">{c.name}</div>
-          <div className="card-meta">{c.email}</div>
+        <Link key={c.id} href={`/messages/${c.id}`} className="card" style={{ display: "block" }}>
+          <div className="card-title">{c.title}</div>
         </Link>
       ))}
     </div>
