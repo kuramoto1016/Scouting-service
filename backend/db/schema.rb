@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_25_063931) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_27_214941) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -47,9 +47,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_25_063931) do
     t.integer "company_id", null: false
     t.datetime "created_at", null: false
     t.text "description"
+    t.date "ends_on"
+    t.integer "graduation_year"
+    t.integer "job_category"
+    t.string "location"
+    t.string "skills", default: [], null: false, array: true
+    t.date "starts_on"
     t.string "title", null: false
     t.datetime "updated_at", null: false
+    t.integer "work_style"
     t.index ["company_id"], name: "index_job_postings_on_company_id"
+    t.index ["graduation_year"], name: "index_job_postings_on_graduation_year"
+    t.index ["job_category"], name: "index_job_postings_on_job_category"
+    t.index ["skills"], name: "index_job_postings_on_skills", using: :gin
+    t.index ["work_style"], name: "index_job_postings_on_work_style"
   end
 
   create_table "messages", force: :cascade do |t|

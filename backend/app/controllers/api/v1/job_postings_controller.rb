@@ -5,18 +5,27 @@ module Api
       before_action :set_job_posting, only: %i[show update destroy]
       before_action :authorize_owner!, only: %i[update destroy]
 
+      DETAIL_FIELDS = %i[
+        id title description created_at graduation_year starts_on ends_on
+        work_style location job_category skills
+      ].freeze
+
       def index
-        render json: JobPosting.includes(:company).order(created_at: :desc).as_json(
-          only: %i[id title description created_at],
-          include: { company: { only: %i[id name] } }
-        )
+        job_postings = JobPosting.includes(:company)
+                                  .with_graduation_year(params[:graduation_year])
+                                  .with_work_style(params[:work_style])
+                                  .with_job_category(params[:job_category])
+                                  .with_location(params[:location])
+                                  .order(created_at: :desc)
+
+        render json: {
+          total_count: job_postings.count,
+          job_postings: serialize_many(job_postings)
+        }
       end
 
       def show
-        render json: @job_posting.as_json(
-          only: %i[id title description created_at],
-          include: { company: { only: %i[id name] } }
-        )
+        render json: serialize_one(@job_posting)
       end
 
       def create
@@ -25,7 +34,7 @@ module Api
         job_posting = current_account.job_postings.new(job_posting_params)
 
         if job_posting.save
-          render json: job_posting.as_json(only: %i[id title description created_at]), status: :created
+          render json: serialize_one(job_posting), status: :created
         else
           render json: { errors: job_posting.errors.full_messages }, status: :unprocessable_entity
         end
@@ -33,7 +42,7 @@ module Api
 
       def update
         if @job_posting.update(job_posting_params)
-          render json: @job_posting.as_json(only: %i[id title description created_at])
+          render json: serialize_one(@job_posting)
         else
           render json: { errors: @job_posting.errors.full_messages }, status: :unprocessable_entity
         end
@@ -55,7 +64,21 @@ module Api
       end
 
       def job_posting_params
-        params.require(:job_posting).permit(:title, :description)
+        params.require(:job_posting).permit(
+          :title, :description, :graduation_year, :starts_on, :ends_on,
+          :work_style, :location, :job_category, skills: []
+        )
+      end
+
+      def serialize_many(job_postings)
+        job_postings.as_json(only: DETAIL_FIELDS, include: { company: { only: %i[id name] } }).tap do |list|
+          list.each_with_index { |json, i| json["deadline_soon"] = job_postings[i].deadline_soon? }
+        end
+      end
+
+      def serialize_one(job_posting)
+        job_posting.as_json(only: DETAIL_FIELDS, include: { company: { only: %i[id name] } })
+                   .merge("deadline_soon" => job_posting.deadline_soon?)
       end
     end
   end
