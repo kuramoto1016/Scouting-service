@@ -39,6 +39,7 @@ export const SECTION_LABELS: Record<ProfileSection, string> = {
 
 export function formatGraduationYearMonth(value: string | null): string | null {
   if (!value) return null;
-  const d = new Date(value);
-  return `${d.getFullYear()}年${d.getMonth() + 1}月卒業予定`;
+  const [year, month] = value.split("-");
+  if (!year || !month) return null;
+  return `${Number(year)}年${Number(month)}月卒業予定`;
 }
