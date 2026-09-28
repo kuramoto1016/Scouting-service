@@ -1,5 +1,5 @@
 :root {
-  --background: #f5f9ff;
+  --background: #f4f5f7;
   --surface: #ffffff;
   --foreground: #1c2733;
   /* --accent / --accent-dark are button backgrounds that carry white text
@@ -10,17 +10,17 @@
   --accent-dark: #054a66;
   --accent-text: #066083;
   --accent-soft: #e6f6fd;
-  --border: #dce9f2;
+  --border: #dfe1e6;
   --muted: #55677a;
   --danger: #c8342a;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0b1420;
-    --surface: #121e2c;
+    --background: #14161a;
+    --surface: #1e2126;
     --foreground: #eaf2f8;
-    --border: #223245;
+    --border: #2c2f36;
     --muted: #a7b7c6;
     --accent-soft: #16303f;
     --danger: #ff6b60;
@@ -47,6 +47,7 @@ body {
   color: var(--foreground);
   background: var(--background);
   font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", Arial, Helvetica, sans-serif;
+  line-height: 1.7;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
