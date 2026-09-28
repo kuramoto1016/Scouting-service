@@ -3,10 +3,131 @@
 # account below is created with the same well-known password.
 raise "db:seed must not be run in production" if Rails.env.production?
 
-intern = Intern.find_or_create_by!(email: "intern@example.com") do |i|
-  i.name = "山田太郎"
-  i.password = "password123"
-  i.bio = "Webアプリケーション開発に興味があるインターン生です。"
+students = [
+  {
+    intern: { email: "intern@example.com", name: "山田太郎" },
+    profile: {
+      school_type: :university,
+      school_name: "青葉大学",
+      department: "工学部情報工学科",
+      graduation_year_month: Date.new(2028, 3, 1),
+      desired_location: "関東, リモート希望",
+      job_hunting_axes: "成長環境, 技術力を伸ばせる",
+      bio: "Webアプリケーション開発に興味があり、個人開発でRailsとReactを使ったサービスを作っています。",
+      career_goal: "将来はバックエンドを軸にしたフルスタックエンジニアとして活躍したいです。"
+    },
+    desired_roles: [ { role: "バックエンドエンジニア", priority: 1 }, { role: "フルスタックエンジニア", priority: 2 } ],
+    skills: [
+      { name: "Ruby", category: :language, level: :personal },
+      { name: "Ruby on Rails", category: :framework, level: :personal },
+      { name: "JavaScript", category: :language, level: :class_experience }
+    ],
+    portfolio_items: [
+      {
+        title: "学内サークル向け予約管理システム",
+        summary: "サークル活動の部室予約を管理するWebアプリを個人で開発しました。",
+        context: :personal,
+        tech_stack: %w[Ruby Rails PostgreSQL],
+        highlights: "予約の重複防止ロジックと通知機能の実装に工夫しました。",
+        github_url: "https://github.com/example/room-booking"
+      },
+      {
+        title: "授業課題：ECサイトのモック開発",
+        summary: "授業の課題でチームによるECサイトのモックアップを開発しました。",
+        context: :class_project,
+        tech_stack: %w[JavaScript HTML CSS]
+      }
+    ]
+  },
+  {
+    intern: { email: "student2@example.com", name: "佐藤花子" },
+    profile: {
+      school_type: :graduate_school,
+      school_name: "みなと工科大学院",
+      department: "情報科学専攻",
+      graduation_year_month: Date.new(2027, 9, 1),
+      desired_location: "東京都渋谷区",
+      job_hunting_axes: "裁量権の大きさ, 事業の将来性",
+      bio: "機械学習を使ったデータ分析に取り組んでいます。ハッカソン参加経験もあります。",
+      career_goal: "データサイエンティストとして事業の意思決定に貢献したいです。"
+    },
+    desired_roles: [ { role: "データサイエンティスト", priority: 1 } ],
+    skills: [
+      { name: "Python", category: :language, level: :personal },
+      { name: "SQL", category: :language, level: :class_experience },
+      { name: "TensorFlow", category: :framework, level: :team }
+    ],
+    portfolio_items: [
+      {
+        title: "需要予測ハッカソン優秀賞",
+        summary: "3人チームで小売店の需要予測モデルを開発し、優秀賞を受賞しました。",
+        context: :hackathon,
+        tech_stack: %w[Python TensorFlow],
+        highlights: "特徴量エンジニアリングを工夫し、精度を大きく改善しました。",
+        github_url: "https://github.com/example/demand-forecast"
+      },
+      {
+        title: "研究室のデータ可視化ツール",
+        summary: "研究室内で使うデータ可視化ダッシュボードを開発しました。",
+        context: :personal,
+        tech_stack: %w[Python Streamlit]
+      }
+    ]
+  },
+  {
+    intern: { email: "student3@example.com", name: "鈴木一郎" },
+    profile: {
+      school_type: :vocational_school,
+      school_name: "中央ITカレッジ",
+      department: "Webデザイン学科",
+      graduation_year_month: Date.new(2027, 3, 1),
+      desired_location: "オンライン",
+      job_hunting_axes: "教育・メンター制度",
+      bio: "デザインとフロントエンド実装の両方に興味があります。",
+      career_goal: "UI/UXデザイナーとしてユーザー体験の改善に携わりたいです。"
+    },
+    desired_roles: [ { role: "UI/UXデザイナー", priority: 1 }, { role: "フロントエンドエンジニア", priority: 2 } ],
+    skills: [
+      { name: "Figma", category: :tool, level: :personal },
+      { name: "TypeScript", category: :language, level: :class_experience }
+    ],
+    portfolio_items: [
+      {
+        title: "カフェ予約アプリのUIデザイン",
+        summary: "個人開発として、カフェの座席予約アプリのUI一式をデザインしました。",
+        context: :personal,
+        tech_stack: %w[Figma],
+        other_url: "https://example.com/cafe-app-design"
+      }
+    ]
+  }
+].freeze
+
+students.each do |entry|
+  intern = Intern.find_or_create_by!(email: entry[:intern][:email]) do |i|
+    i.name = entry[:intern][:name]
+    i.password = "password123"
+  end
+
+  profile = intern.student_profile || intern.create_student_profile!
+  profile.update!(entry[:profile])
+
+  entry[:desired_roles].each do |role_attrs|
+    profile.student_desired_roles.find_or_create_by!(role: role_attrs[:role]) { |r| r.priority = role_attrs[:priority] }
+  end
+
+  entry[:skills].each do |skill_attrs|
+    profile.student_skills.find_or_create_by!(name: skill_attrs[:name]) do |s|
+      s.category = skill_attrs[:category]
+      s.level = skill_attrs[:level]
+    end
+  end
+
+  entry[:portfolio_items].each do |item_attrs|
+    profile.portfolio_items.find_or_create_by!(title: item_attrs[:title]) do |item|
+      item.assign_attributes(item_attrs.except(:title))
+    end
+  end
 end
 
 companies_and_jobs = [

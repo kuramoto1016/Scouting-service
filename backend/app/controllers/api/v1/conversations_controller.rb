@@ -19,7 +19,7 @@ module Api
 
       def company_conversations
         Intern.joins(:messages).where(messages: { company_id: current_account.id }).distinct
-              .as_json(only: %i[id name email bio])
+              .as_json(only: %i[id name email])
       end
 
       def intern_conversations

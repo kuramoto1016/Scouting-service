@@ -3,54 +3,31 @@ module Api
     class InternsController < ApplicationController
       before_action :authenticate_request!
       before_action :authorize_company!, only: %i[index show]
-      before_action :set_intern, only: %i[show update]
-      before_action :authorize_self!, only: %i[update]
-
-      PROFILE_FIELDS = %i[
-        id name email bio university faculty grade skills desired_location desired_job_type
-        portfolio_url career_goal job_hunting_axes
-      ].freeze
+      before_action :set_intern, only: %i[show]
 
       def index
-        interns = Intern.search_keyword(params[:keyword])
+        interns = Intern.includes(student_profile: %i[student_desired_roles student_skills portfolio_items])
+                         .search_keyword(params[:keyword])
                          .with_skill(params[:skill])
                          .with_job_type(params[:job_type])
                          .with_location(params[:location])
                          .order(:name)
-        render json: interns.as_json(only: PROFILE_FIELDS)
+        render json: interns.map { |intern| StudentProfileSerializer.new(intern).as_json }
       end
 
       def show
-        render json: @intern.as_json(only: PROFILE_FIELDS)
-      end
-
-      def update
-        if @intern.update(intern_params)
-          render json: @intern.as_json(only: PROFILE_FIELDS)
-        else
-          render json: { errors: @intern.errors.full_messages }, status: :unprocessable_entity
-        end
+        render json: StudentProfileSerializer.new(@intern).as_json
       end
 
       private
 
       def set_intern
-        @intern = Intern.find(params[:id])
+        @intern = Intern.includes(student_profile: %i[student_desired_roles student_skills portfolio_items])
+                         .find(params[:id])
       end
 
       def authorize_company!
         render_unauthorized unless current_account.is_a?(Company)
-      end
-
-      def authorize_self!
-        render_unauthorized unless current_account.is_a?(Intern) && current_account.id == @intern.id
-      end
-
-      def intern_params
-        params.require(:intern).permit(
-          :name, :bio, :university, :faculty, :grade, :skills, :desired_location, :desired_job_type,
-          :portfolio_url, :career_goal, :job_hunting_axes
-        )
       end
     end
   end

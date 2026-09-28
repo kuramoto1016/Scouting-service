@@ -10,8 +10,12 @@ Rails.application.routes.draw do
       post "auth/company_signup", to: "company_registrations#create"
       get "me", to: "me#show"
 
-      resources :interns, only: %i[index show update] do
+      resources :interns, only: %i[index show] do
         resources :messages, only: %i[index create]
+        patch "student_profile/:section", to: "student_profiles#update", as: :student_profile_section
+        put "student_skills", to: "student_skills#update"
+        patch "portfolio_items/reorder", to: "portfolio_items#reorder"
+        resources :portfolio_items, only: %i[create update destroy]
       end
 
       resources :companies, only: [] do

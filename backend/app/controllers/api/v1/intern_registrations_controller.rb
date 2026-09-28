@@ -5,7 +5,8 @@ module Api
         intern = Intern.new(intern_params)
 
         if intern.save
-          render json: { token: issue_token(intern), intern: serialize(intern) }, status: :created
+          intern.student_profile.update!(bio: params.dig(:intern, :bio)) if params.dig(:intern, :bio).present?
+          render json: { token: issue_token(intern), intern: StudentProfileSerializer.new(intern).as_json }, status: :created
         else
           render json: { errors: intern.errors.full_messages }, status: :unprocessable_entity
         end
@@ -14,15 +15,11 @@ module Api
       private
 
       def intern_params
-        params.require(:intern).permit(:name, :email, :password, :bio)
+        params.require(:intern).permit(:name, :email, :password)
       end
 
       def issue_token(intern)
         JsonWebToken.encode({ sub: intern.id, sub_type: "Intern" })
-      end
-
-      def serialize(intern)
-        intern.as_json(only: InternsController::PROFILE_FIELDS)
       end
     end
   end

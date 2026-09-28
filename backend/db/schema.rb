@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_27_214941) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_28_021724) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -25,20 +25,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_214941) do
   end
 
   create_table "interns", force: :cascade do |t|
-    t.text "bio"
-    t.text "career_goal"
     t.datetime "created_at", null: false
-    t.string "desired_job_type"
-    t.string "desired_location"
     t.string "email", null: false
-    t.string "faculty"
-    t.string "grade"
-    t.string "job_hunting_axes"
     t.string "name", null: false
     t.string "password_digest", null: false
-    t.string "portfolio_url"
-    t.string "skills"
-    t.string "university"
     t.datetime "updated_at", null: false
     t.index ["email"], name: "index_interns_on_email", unique: true
   end
@@ -75,7 +65,64 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_214941) do
     t.index ["intern_id"], name: "index_messages_on_intern_id"
   end
 
+  create_table "portfolio_items", force: :cascade do |t|
+    t.integer "context"
+    t.datetime "created_at", null: false
+    t.string "github_url"
+    t.text "highlights"
+    t.string "other_url"
+    t.integer "position", default: 0, null: false
+    t.bigint "student_profile_id", null: false
+    t.text "summary"
+    t.string "tech_stack", default: [], null: false, array: true
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.index ["student_profile_id", "position"], name: "index_portfolio_items_on_student_profile_id_and_position"
+    t.index ["student_profile_id"], name: "index_portfolio_items_on_student_profile_id"
+  end
+
+  create_table "student_desired_roles", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "priority", null: false
+    t.string "role", null: false
+    t.bigint "student_profile_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["student_profile_id", "priority"], name: "index_desired_roles_on_profile_and_priority", unique: true
+    t.index ["student_profile_id", "role"], name: "index_desired_roles_on_profile_and_role", unique: true
+    t.index ["student_profile_id"], name: "index_student_desired_roles_on_student_profile_id"
+  end
+
+  create_table "student_profiles", force: :cascade do |t|
+    t.text "bio"
+    t.text "career_goal"
+    t.datetime "created_at", null: false
+    t.string "department"
+    t.string "desired_location"
+    t.date "graduation_year_month"
+    t.bigint "intern_id", null: false
+    t.string "job_hunting_axes"
+    t.string "school_name"
+    t.integer "school_type"
+    t.datetime "updated_at", null: false
+    t.index ["intern_id"], name: "index_student_profiles_on_intern_id", unique: true
+  end
+
+  create_table "student_skills", force: :cascade do |t|
+    t.integer "category", null: false
+    t.datetime "created_at", null: false
+    t.integer "level", null: false
+    t.string "name", null: false
+    t.bigint "student_profile_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["student_profile_id", "name"], name: "index_student_skills_on_student_profile_id_and_name", unique: true
+    t.index ["student_profile_id"], name: "index_student_skills_on_student_profile_id"
+  end
+
   add_foreign_key "job_postings", "companies"
   add_foreign_key "messages", "companies"
   add_foreign_key "messages", "interns"
+  add_foreign_key "portfolio_items", "student_profiles"
+  add_foreign_key "student_desired_roles", "student_profiles"
+  add_foreign_key "student_profiles", "interns"
+  add_foreign_key "student_skills", "student_profiles"
 end
