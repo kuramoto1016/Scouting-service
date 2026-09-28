@@ -9,7 +9,7 @@ class PortfolioItem < ApplicationRecord
     hackathon: 2,
     intern: 3,
     other: 4
-  }, prefix: true
+  }, prefix: true, validate: { allow_nil: true }
 
   MAX_ITEMS_PER_PROFILE = 10
   TITLE_MAX_LENGTH = 100
