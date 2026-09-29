@@ -10,14 +10,17 @@ module Api
       def index
         conversations =
           if current_account.is_a?(Company)
-            current_account.conversations.includes(:interns)
+            current_account.conversations.includes(:company, :interns, messages: :sender_intern)
           elsif current_account.is_a?(Intern)
-            current_account.conversations.includes(:company, :interns)
+            current_account.conversations.includes(:company, :interns, messages: :sender_intern)
           else
             return render_unauthorized
           end
 
-        render json: conversations.map { |c| conversation_json(c, include_company: true) }
+        render json: conversations
+          .sort_by { |conversation| conversation.last_activity_at || conversation.created_at }
+          .reverse
+          .map { |c| conversation_json(c, include_company: true) }
       end
 
       def show
@@ -77,7 +80,7 @@ module Api
       end
 
       def set_conversation
-        @conversation = Conversation.includes(:company, :interns).find(params[:id])
+        @conversation = Conversation.includes(:company, :interns, messages: :sender_intern).find(params[:id])
       end
 
       def authorize_participant!
@@ -92,13 +95,27 @@ module Api
       end
 
       def conversation_json(conversation, include_company: false)
+        latest_message = conversation.messages.max_by(&:created_at)
         json = {
           id: conversation.id,
           title: conversation.display_title,
-          interns: conversation.interns.map { |i| { id: i.id, name: i.name } }
+          interns: conversation.interns.map { |i| { id: i.id, name: i.name } },
+          participant_count: conversation.interns.size + 1,
+          last_activity_at: (latest_message&.created_at || conversation.created_at),
+          latest_message: latest_message && message_preview_json(latest_message)
         }
         json[:company] = { id: conversation.company.id, name: conversation.company.name } if include_company
         json
+      end
+
+      def message_preview_json(message)
+        {
+          id: message.id,
+          sender_type: message.sender_type,
+          sender_name: message.sender_type == "company" ? message.conversation.company.name : message.sender_intern&.name,
+          body: message.body,
+          created_at: message.created_at
+        }
       end
     end
   end

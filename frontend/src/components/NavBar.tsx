@@ -26,6 +26,7 @@ export function NavBar() {
         {!loading && token && accountType === "company" && <Link href="/interns">インターン生一覧</Link>}
         {!loading && token && (
           <>
+            <Link href="/messages">チャット</Link>
             <Link href="/mypage">マイページ</Link>
             <span className="navbar-account">{account?.name} さん</span>
             <button type="button" onClick={handleSignOut}>

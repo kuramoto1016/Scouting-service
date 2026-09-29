@@ -382,6 +382,15 @@ export interface Conversation {
   id: number;
   title: string;
   interns: ConversationParticipant[];
+  participant_count: number;
+  last_activity_at: string;
+  latest_message: {
+    id: number;
+    sender_type: AccountType;
+    sender_name: string | null;
+    body: string;
+    created_at: string;
+  } | null;
   company?: { id: number; name: string };
 }
 

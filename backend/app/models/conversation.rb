@@ -11,6 +11,10 @@ class Conversation < ApplicationRecord
     title.presence || interns.order(:id).map { |intern| "#{intern.name}さん" }.join("、")
   end
 
+  def last_activity_at
+    messages.max_by(&:created_at)&.created_at || created_at
+  end
+
   private
 
   def must_have_at_least_one_participant
