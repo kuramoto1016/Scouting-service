@@ -9,6 +9,7 @@ module Api
         interns = Intern.includes(student_profile: %i[student_desired_roles student_skills portfolio_items student_highlights])
                          .search_keyword(params[:keyword])
                          .with_skill(params[:skill])
+                         .with_job_category(params[:job_category])
                          .with_job_subcategory(params[:job_subcategory])
                          .with_location(params[:location])
                          .order(:name)

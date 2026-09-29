@@ -43,7 +43,7 @@ export default function InternsListPage() {
     let cancelled = false;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- guarded by `cancelled` below
     setLoadingInterns(true);
-    fetchInterns(token, { keyword: appliedKeyword, skill, jobSubcategory, location })
+    fetchInterns(token, { keyword: appliedKeyword, skill, jobCategory, jobSubcategory, location })
       .then((data) => {
         if (cancelled) return;
         setInterns(data);
@@ -60,7 +60,7 @@ export default function InternsListPage() {
     return () => {
       cancelled = true;
     };
-  }, [token, accountType, appliedKeyword, skill, jobSubcategory, location]);
+  }, [token, accountType, appliedKeyword, skill, jobCategory, jobSubcategory, location]);
 
   const handleSearchSubmit = (e: FormEvent) => {
     e.preventDefault();

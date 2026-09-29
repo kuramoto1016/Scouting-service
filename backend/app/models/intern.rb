@@ -30,6 +30,13 @@ class Intern < ApplicationRecord
     joins(student_profile: :student_skills).where(student_skills: { name: skill }).distinct
   }
 
+  scope :with_job_category, lambda { |job_category|
+    next all if job_category.blank?
+
+    joins(student_profile: :student_desired_roles)
+      .where(student_desired_roles: { job_category: job_category }).distinct
+  }
+
   scope :with_job_subcategory, lambda { |job_subcategory|
     next all if job_subcategory.blank?
 

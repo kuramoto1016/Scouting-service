@@ -223,6 +223,7 @@ export function fetchMe(token: string) {
 export interface InternSearchParams {
   keyword?: string;
   skill?: string;
+  jobCategory?: string;
   jobSubcategory?: string;
   location?: string;
 }
@@ -231,6 +232,7 @@ export function fetchInterns(token: string, search: InternSearchParams = {}) {
   const query = new URLSearchParams();
   if (search.keyword) query.set("keyword", search.keyword);
   if (search.skill) query.set("skill", search.skill);
+  if (search.jobCategory) query.set("job_category", search.jobCategory);
   if (search.jobSubcategory) query.set("job_subcategory", search.jobSubcategory);
   if (search.location) query.set("location", search.location);
 
