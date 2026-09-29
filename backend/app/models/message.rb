@@ -37,8 +37,8 @@ class Message < ApplicationRecord
   def soft_delete!
     return if deleted?
 
-    attachments.purge_later
     update!(deleted_at: Time.current)
+    attachments.purge_later
   end
 
   def apply_edit!(body:, attachments: nil)
