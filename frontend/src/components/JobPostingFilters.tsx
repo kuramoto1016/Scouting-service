@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { WorkStyle } from "@/lib/api";
 import { WORK_STYLE_LABELS, WORK_STYLE_OPTIONS } from "@/lib/job-posting-labels";
-import { JOB_TAXONOMY, JobCategoryKey, JOB_CATEGORY_KEYS, subcategoryKeysFor, jobSubcategoryLabel } from "@/lib/job-taxonomy";
+import { JOB_TAXONOMY, JOB_CATEGORY_KEYS, subcategoryKeysFor, jobSubcategoryLabel } from "@/lib/job-taxonomy";
 
 export interface JobPostingFilterValues {
   graduationYear: string;
@@ -92,7 +92,7 @@ export function JobPostingFilters({
             <option value="">指定なし</option>
             {subcategoryOptions.map((subcategory) => (
               <option key={subcategory} value={subcategory}>
-                {jobSubcategoryLabel(values.jobCategory as JobCategoryKey, subcategory)}
+                {jobSubcategoryLabel(values.jobCategory, subcategory)}
               </option>
             ))}
           </select>

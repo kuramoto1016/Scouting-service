@@ -29,6 +29,20 @@ export const JOB_CATEGORY_ICONS: Record<JobCategoryKey, string> = {
 
 export const JOB_CATEGORY_OPTIONS: JobCategoryKey[] = JOB_CATEGORY_KEYS;
 
+function isJobCategoryKey(value: string): value is JobCategoryKey {
+  return (JOB_CATEGORY_KEYS as string[]).includes(value);
+}
+
+/** Safe lookup for values coming from the API, which are typed as plain `string`. */
+export function jobCategoryGradient(category: string | null): string | undefined {
+  return category && isJobCategoryKey(category) ? JOB_CATEGORY_GRADIENTS[category] : undefined;
+}
+
+/** Safe lookup for values coming from the API, which are typed as plain `string`. */
+export function jobCategoryIcon(category: string | null): string {
+  return category && isJobCategoryKey(category) ? JOB_CATEGORY_ICONS[category] : "✦";
+}
+
 export function formatDateRange(startsOn: string | null, endsOn: string | null): string | null {
   if (!startsOn && !endsOn) return null;
   const format = (iso: string) => {

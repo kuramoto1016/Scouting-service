@@ -2,7 +2,14 @@
 
 import { useState } from "react";
 import { DesiredRole } from "@/lib/api";
-import { JOB_TAXONOMY, JobCategoryKey, JOB_CATEGORY_KEYS, subcategoryKeysFor, jobSubcategoryLabel } from "@/lib/job-taxonomy";
+import {
+  JOB_TAXONOMY,
+  JobCategoryKey,
+  JOB_CATEGORY_KEYS,
+  subcategoryKeysFor,
+  jobCategoryLabel,
+  jobSubcategoryLabel,
+} from "@/lib/job-taxonomy";
 
 const MAX_ROLES = 3;
 
@@ -90,7 +97,7 @@ export function DesiredRolePicker({
         <ol className="desired-role-order-list">
           {sorted.map((r, index) => (
             <li key={r.job_subcategory}>
-              <span className="tag">{index + 1}位</span> {JOB_TAXONOMY[r.job_category as JobCategoryKey]?.label ?? r.job_category}
+              <span className="tag">{index + 1}位</span> {jobCategoryLabel(r.job_category) ?? r.job_category}
               ／{jobSubcategoryLabel(r.job_category, r.job_subcategory)}
               <span className="desired-role-order-controls">
                 <button

@@ -37,7 +37,7 @@ module Api
         if job_posting.save
           render json: serialize_one(job_posting), status: :created
         else
-          render json: { errors: job_posting.errors.full_messages }, status: :unprocessable_entity
+          render_validation_errors(job_posting.errors)
         end
       end
 
@@ -45,7 +45,7 @@ module Api
         if @job_posting.update(job_posting_params)
           render json: serialize_one(@job_posting)
         else
-          render json: { errors: @job_posting.errors.full_messages }, status: :unprocessable_entity
+          render_validation_errors(@job_posting.errors)
         end
       end
 

@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { createJobPosting, ApiError, WorkStyle } from "@/lib/api";
 import { WORK_STYLE_LABELS, WORK_STYLE_OPTIONS } from "@/lib/job-posting-labels";
 import { JOB_TAXONOMY, JobCategoryKey, JOB_CATEGORY_KEYS, subcategoryKeysFor, jobSubcategoryLabel } from "@/lib/job-taxonomy";
+import { FieldError } from "@/components/FieldError";
 
 export default function NewJobPage() {
   const { token, accountType, loading } = useAuth();
@@ -21,6 +22,7 @@ export default function NewJobPage() {
   const [jobSubcategory, setJobSubcategory] = useState("");
   const [skillsInput, setSkillsInput] = useState("");
   const [errors, setErrors] = useState<string[]>([]);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -38,6 +40,7 @@ export default function NewJobPage() {
     e.preventDefault();
     if (!token) return;
     setErrors([]);
+    setFieldErrors({});
     setSubmitting(true);
     try {
       await createJobPosting(token, {
@@ -57,7 +60,12 @@ export default function NewJobPage() {
       });
       router.push("/jobs");
     } catch (err) {
-      setErrors(err instanceof ApiError ? err.errors : ["掲載に失敗しました"]);
+      if (err instanceof ApiError) {
+        setErrors(err.errors);
+        setFieldErrors(err.fieldErrors);
+      } else {
+        setErrors(["掲載に失敗しました"]);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -136,14 +144,17 @@ export default function NewJobPage() {
             value={jobSubcategory}
             onChange={(e) => setJobSubcategory(e.target.value)}
             disabled={!jobCategory}
+            required={!!jobCategory}
           >
-            <option value="">指定なし</option>
+            <option value="">{jobCategory ? "選択してください" : "大分類を先に選択してください"}</option>
             {subcategoryKeysFor(jobCategory).map((subcategory) => (
               <option key={subcategory} value={subcategory}>
                 {jobSubcategoryLabel(jobCategory, subcategory)}
               </option>
             ))}
           </select>
+          {jobCategory && <p className="muted" style={{ fontSize: "0.8rem" }}>大分類を選択した場合、小分類の選択も必要です</p>}
+          <FieldError messages={fieldErrors.job_subcategory} />
         </label>
         <label>
           スキルタグ（カンマ区切り）

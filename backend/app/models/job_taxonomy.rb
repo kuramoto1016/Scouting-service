@@ -3,7 +3,7 @@
 # database table: the category set changes rarely, and a prototype with a
 # handful of records does not need admin-managed taxonomy rows.
 class JobTaxonomy
-  CATEGORIES = {
+  RAW_CATEGORIES = {
     "engineering" => {
       label: "エンジニア",
       subcategories: {
@@ -61,6 +61,9 @@ class JobTaxonomy
       }
     }
   }.freeze
+
+  # Deep-frozen so nothing downstream can mutate the shared taxonomy at runtime.
+  CATEGORIES = RAW_CATEGORIES.transform_values { |data| data.merge(subcategories: data[:subcategories].freeze).freeze }.freeze
 
   class << self
     def category_keys
