@@ -89,10 +89,13 @@ export function HighlightsForm({ intern }: { intern: Intern }) {
 
   const move = async (index: number, direction: -1 | 1) => {
     const target = index + direction;
-    if (target < 0 || target >= highlights.length || !token) return;
+    if (target < 0 || target >= highlights.length || !token || submitting) return;
+    const previous = highlights;
     const next = highlights.slice();
     [next[index], next[target]] = [next[target], next[index]];
     setHighlights(next);
+    setErrors([]);
+    setSubmitting(true);
     try {
       const updated = await reorderStudentHighlights(
         token,
@@ -100,8 +103,11 @@ export function HighlightsForm({ intern }: { intern: Intern }) {
         next.map((h) => h.id)
       );
       applyUpdate(updated);
-    } catch {
-      setHighlights(highlights);
+    } catch (err) {
+      setHighlights(previous);
+      setErrors(err instanceof ApiError ? err.errors : ["並び替えに失敗しました"]);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -146,20 +152,35 @@ export function HighlightsForm({ intern }: { intern: Intern }) {
             <div className="card-title">{highlight.title}</div>
             <p style={{ marginBottom: "0.5rem", whiteSpace: "pre-wrap" }}>{highlight.body}</p>
             <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-              <button type="button" className="btn-secondary" onClick={() => setEditingId(highlight.id)}>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => setEditingId(highlight.id)}
+                disabled={submitting}
+              >
                 編集
               </button>
-              <button type="button" className="btn-secondary" onClick={() => handleDelete(highlight.id)}>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => handleDelete(highlight.id)}
+                disabled={submitting}
+              >
                 削除
               </button>
-              <button type="button" className="btn-secondary" onClick={() => move(index, -1)} disabled={index === 0}>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => move(index, -1)}
+                disabled={index === 0 || submitting}
+              >
                 ↑
               </button>
               <button
                 type="button"
                 className="btn-secondary"
                 onClick={() => move(index, 1)}
-                disabled={index === highlights.length - 1}
+                disabled={index === highlights.length - 1 || submitting}
               >
                 ↓
               </button>
