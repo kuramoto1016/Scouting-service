@@ -4,6 +4,8 @@ module Api
       before_action :authenticate_request!
       before_action :set_conversation
       before_action :authorize_participant!
+      before_action :set_message, only: %i[update destroy]
+      before_action :authorize_sender!, only: %i[update destroy]
 
       # GET /api/v1/conversations/:conversation_id/messages
       def index
@@ -20,6 +22,27 @@ module Api
         else
           render_validation_errors(message.errors)
         end
+      end
+
+      # PATCH /api/v1/conversations/:conversation_id/messages/:id (sender only)
+      def update
+        return render json: { error: "削除されたメッセージは編集できません" }, status: :unprocessable_entity if @message.deleted?
+
+        # `attachments` is only replaced when the key is explicitly present in
+        # the request (even as an empty array, to clear existing files);
+        # omitting it entirely leaves the message's current attachments as-is.
+        permitted = message_params
+        new_attachments = permitted.key?(:attachments) ? permitted[:attachments] : nil
+        @message.apply_edit!(body: permitted[:body].to_s, attachments: new_attachments)
+        render json: message_json(@message.reload)
+      rescue ActiveRecord::RecordInvalid => e
+        render_validation_errors(e.record.errors)
+      end
+
+      # DELETE /api/v1/conversations/:conversation_id/messages/:id (sender only)
+      def destroy
+        @message.soft_delete!
+        render json: message_json(@message.reload)
       end
 
       private
@@ -40,9 +63,24 @@ module Api
         @conversation = Conversation.includes(:interns).find(params[:conversation_id])
       end
 
+      def set_message
+        @message = @conversation.messages.find(params[:id])
+      end
+
       def authorize_participant!
         return if current_account.is_a?(Company) && @conversation.company_id == current_account.id
         return if current_account.is_a?(Intern) && @conversation.interns.exists?(id: current_account.id)
+
+        render_unauthorized
+      end
+
+      # Only the original sender may edit or delete a message: for a company
+      # message that means the company that owns the conversation, and for an
+      # intern message specifically the intern who sent it (not just any
+      # participant of a group conversation).
+      def authorize_sender!
+        return if current_account.is_a?(Company) && @message.sender_type == "company" && @conversation.company_id == current_account.id
+        return if current_account.is_a?(Intern) && @message.sender_type == "intern" && @message.sender_intern_id == current_account.id
 
         render_unauthorized
       end
@@ -52,9 +90,11 @@ module Api
           id: message.id,
           sender_type: message.sender_type,
           sender_intern: message.sender_intern && { id: message.sender_intern.id, name: message.sender_intern.name },
-          body: message.body,
+          body: message.deleted? ? "" : message.body,
           created_at: message.created_at,
-          attachments: message.attachments.map { |a| attachment_json(message, a) }
+          edited: message.edited?,
+          deleted: message.deleted?,
+          attachments: message.deleted? ? [] : message.attachments.map { |a| attachment_json(message, a) }
         }
       end
 

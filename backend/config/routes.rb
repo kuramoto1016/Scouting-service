@@ -22,7 +22,7 @@ Rails.application.routes.draw do
       resources :job_postings, only: %i[index show create update destroy]
 
       resources :conversations, only: %i[index show create update] do
-        resources :messages, only: %i[index create] do
+        resources :messages, only: %i[index create update destroy] do
           resources :attachments, only: %i[show], controller: :message_attachments
         end
       end

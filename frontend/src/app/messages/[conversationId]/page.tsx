@@ -11,6 +11,8 @@ import {
   fetchAttachmentBlob,
   fetchMessages,
   sendMessage,
+  updateMessage,
+  deleteMessage,
   Conversation,
   Message,
   MessageAttachment,
@@ -43,6 +45,17 @@ function formatByteSize(bytes: number): string {
 
 function isImageAttachment(contentType: string): boolean {
   return contentType.startsWith("image/");
+}
+
+// `message.sender_type === accountType` alone is not enough to identify "my"
+// messages in a group conversation: it would also match every other intern
+// participant's messages for an intern viewer. Company senders are unambiguous
+// (a conversation has exactly one company), so only the intern case needs the
+// extra sender_intern_id check.
+function isMessageMine(message: Message, accountType: string | null, accountId: number | undefined): boolean {
+  if (message.sender_type !== accountType) return false;
+  if (accountType === "intern") return message.sender_intern?.id === accountId;
+  return true;
 }
 
 const MAX_ATTACHMENTS = 5;
@@ -191,7 +204,7 @@ export default function MessagesPage() {
   const params = useParams<{ conversationId: string }>();
   const conversationId = Number(params.conversationId);
 
-  const { token, accountType, loading } = useAuth();
+  const { token, accountType, account, loading } = useAuth();
   const router = useRouter();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [conversation, setConversation] = useState<Conversation | null>(null);
@@ -202,6 +215,9 @@ export default function MessagesPage() {
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [editingMessageId, setEditingMessageId] = useState<number | null>(null);
+  const [editingBody, setEditingBody] = useState("");
+  const [messageActionError, setMessageActionError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -301,6 +317,44 @@ export default function MessagesPage() {
     setPendingFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const startEditing = (message: Message) => {
+    setMessageActionError(null);
+    setEditingMessageId(message.id);
+    setEditingBody(message.body);
+  };
+
+  const cancelEditing = () => {
+    setEditingMessageId(null);
+    setEditingBody("");
+  };
+
+  const submitEdit = async (messageId: number) => {
+    if (!token || !editingBody.trim()) return;
+    setMessageActionError(null);
+    try {
+      const updated = await updateMessage(token, conversationId, messageId, editingBody.trim());
+      setMessages((prev) => prev.map((m) => (m.id === messageId ? updated : m)));
+      cancelEditing();
+      loadConversations();
+    } catch (err) {
+      setMessageActionError(err instanceof ApiError ? err.errors.join(", ") : "編集に失敗しました");
+    }
+  };
+
+  const handleDelete = async (messageId: number) => {
+    if (!token) return;
+    if (!window.confirm("このメッセージを削除しますか？")) return;
+
+    setMessageActionError(null);
+    try {
+      const updated = await deleteMessage(token, conversationId, messageId);
+      setMessages((prev) => prev.map((m) => (m.id === messageId ? updated : m)));
+      loadConversations();
+    } catch (err) {
+      setMessageActionError(err instanceof ApiError ? err.errors.join(", ") : "削除に失敗しました");
+    }
+  };
+
   if (loading || !token) return null;
 
   const headerTitle = conversation
@@ -380,27 +434,69 @@ export default function MessagesPage() {
 
         <section className="teams-thread" aria-label="メッセージ">
           {loadingMessages && <p className="muted">読み込み中...</p>}
-          {messages.map((m) => (
-            <article key={m.id} className={`teams-post ${m.sender_type === accountType ? "mine" : ""}`}>
-              <div className="teams-post-avatar">
-                {initials(m.sender_type === "company" ? conversation?.company?.name ?? "企業" : m.sender_intern?.name ?? "学生")}
-              </div>
-              <div className="teams-post-body">
-                <div className="teams-post-meta">
-                  <span>{m.sender_type === "company" ? conversation?.company?.name ?? "企業" : m.sender_intern?.name ?? "不明なユーザー"}</span>
-                  <time>{new Date(m.created_at).toLocaleString("ja-JP")}</time>
+          {messageActionError && <p className="error-text">{messageActionError}</p>}
+          {messages.map((m) => {
+            const mine = isMessageMine(m, accountType, account?.id);
+            const isEditing = editingMessageId === m.id;
+
+            return (
+              <article key={m.id} className={`teams-post ${mine ? "mine" : ""}`}>
+                <div className="teams-post-avatar">
+                  {initials(m.sender_type === "company" ? conversation?.company?.name ?? "企業" : m.sender_intern?.name ?? "学生")}
                 </div>
-                {m.body && <p>{m.body}</p>}
-                {m.attachments.length > 0 && (
-                  <div className="teams-attachment-list">
-                    {m.attachments.map((attachment) => (
-                      <AuthenticatedAttachment key={attachment.id} attachment={attachment} token={token} />
-                    ))}
+                <div className="teams-post-body">
+                  <div className="teams-post-meta">
+                    <span>{m.sender_type === "company" ? conversation?.company?.name ?? "企業" : m.sender_intern?.name ?? "不明なユーザー"}</span>
+                    <time>{new Date(m.created_at).toLocaleString("ja-JP")}</time>
+                    {m.edited && !m.deleted && <span className="teams-post-edited">（編集済み）</span>}
                   </div>
-                )}
-              </div>
-            </article>
-          ))}
+
+                  {m.deleted ? (
+                    <p className="muted teams-post-deleted">このメッセージは削除されました</p>
+                  ) : isEditing ? (
+                    <div className="teams-post-edit-form">
+                      <textarea
+                        value={editingBody}
+                        onChange={(e) => setEditingBody(e.target.value)}
+                        maxLength={MESSAGE_BODY_MAX_LENGTH}
+                        autoFocus
+                      />
+                      <div className="teams-post-edit-actions">
+                        <button type="button" onClick={() => submitEdit(m.id)} disabled={!editingBody.trim()}>
+                          保存
+                        </button>
+                        <button type="button" className="btn-secondary" onClick={cancelEditing}>
+                          キャンセル
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      {m.body && <p>{m.body}</p>}
+                      {m.attachments.length > 0 && (
+                        <div className="teams-attachment-list">
+                          {m.attachments.map((attachment) => (
+                            <AuthenticatedAttachment key={attachment.id} attachment={attachment} token={token} />
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {mine && !m.deleted && !isEditing && (
+                    <div className="teams-post-actions">
+                      <button type="button" className="link-button" onClick={() => startEditing(m)}>
+                        編集
+                      </button>
+                      <button type="button" className="link-button" onClick={() => handleDelete(m.id)}>
+                        削除
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </article>
+            );
+          })}
           {!loadingMessages && messages.length === 0 && <p className="muted teams-empty">最初のメッセージを送信できます</p>}
           <div ref={bottomRef} />
         </section>

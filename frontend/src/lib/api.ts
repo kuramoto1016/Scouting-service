@@ -113,6 +113,8 @@ export interface Message {
   sender_intern: { id: number; name: string } | null;
   body: string;
   created_at: string;
+  edited: boolean;
+  deleted: boolean;
   attachments: MessageAttachment[];
 }
 
@@ -480,6 +482,48 @@ export function sendMessage(
     method: "POST",
     token,
     body: formData,
+  });
+}
+
+/**
+ * Edits a message the caller previously sent. `attachments` follows the same
+ * "presence matters" rule as the backend: omit it to keep the message's
+ * current files, or pass an array (including `[]`) to replace them.
+ */
+export function updateMessage(
+  token: string,
+  conversationId: number,
+  messageId: number,
+  body: string,
+  attachments?: File[]
+) {
+  if (attachments === undefined) {
+    return request<Message>(`/api/v1/conversations/${conversationId}/messages/${messageId}`, {
+      method: "PATCH",
+      token,
+      body: JSON.stringify({ message: { body } }),
+    });
+  }
+
+  const formData = new FormData();
+  formData.set("message[body]", body);
+  if (attachments.length === 0) {
+    formData.append("message[attachments][]", "");
+  } else {
+    attachments.forEach((file) => formData.append("message[attachments][]", file));
+  }
+
+  return request<Message>(`/api/v1/conversations/${conversationId}/messages/${messageId}`, {
+    method: "PATCH",
+    token,
+    body: formData,
+  });
+}
+
+export function deleteMessage(token: string, conversationId: number, messageId: number) {
+  return request<Message>(`/api/v1/conversations/${conversationId}/messages/${messageId}`, {
+    method: "DELETE",
+    token,
   });
 }
 

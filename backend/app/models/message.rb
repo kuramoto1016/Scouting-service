@@ -26,6 +26,30 @@ class Message < ApplicationRecord
 
   scope :ordered, -> { order(:created_at) }
 
+  def deleted?
+    deleted_at.present?
+  end
+
+  def edited?
+    edited_at.present?
+  end
+
+  def soft_delete!
+    return if deleted?
+
+    attachments.purge_later
+    update!(deleted_at: Time.current)
+  end
+
+  def apply_edit!(body:, attachments: nil)
+    raise ActiveRecord::RecordNotSaved, "deleted messages cannot be edited" if deleted?
+
+    transaction do
+      self.attachments = attachments if attachments
+      update!(body: body, edited_at: Time.current)
+    end
+  end
+
   private
 
   def normalize_body
