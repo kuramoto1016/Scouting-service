@@ -33,6 +33,7 @@ export const SECTION_LABELS: Record<ProfileSection, string> = {
   desired_conditions: "希望条件",
   skills: "スキル",
   portfolio_items: "制作物",
+  highlights: "学生時代に力を入れたこと",
   self_pr: "自己PR・キャリア",
   links: "リンク",
 };

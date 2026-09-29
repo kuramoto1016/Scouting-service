@@ -2,7 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { fetchJobPostings, JobPosting, JobCategory, WorkStyle } from "@/lib/api";
+import { fetchJobPostings, JobPosting, WorkStyle } from "@/lib/api";
 import { JobPostingCard, JobPostingCardSkeleton } from "@/components/JobPostingCard";
 import { JobPostingFilters, JobPostingFilterValues } from "@/components/JobPostingFilters";
 
@@ -18,7 +18,8 @@ function valuesFromSearchParams(params: URLSearchParams): JobPostingFilterValues
   return {
     graduationYear: params.get("graduation_year") ?? "",
     workStyle: (params.get("work_style") as WorkStyle | null) ?? "",
-    jobCategory: (params.get("job_category") as JobCategory | null) ?? "",
+    jobCategory: params.get("job_category") ?? "",
+    jobSubcategory: params.get("job_subcategory") ?? "",
     location: params.get("location") ?? "",
   };
 }
@@ -28,6 +29,7 @@ function buildQueryString(values: JobPostingFilterValues): string {
   if (values.graduationYear) params.set("graduation_year", values.graduationYear);
   if (values.workStyle) params.set("work_style", values.workStyle);
   if (values.jobCategory) params.set("job_category", values.jobCategory);
+  if (values.jobSubcategory) params.set("job_subcategory", values.jobSubcategory);
   if (values.location) params.set("location", values.location);
   return params.toString();
 }
@@ -129,6 +131,7 @@ function JobsPageContent() {
       graduationYear: filterValues.graduationYear || undefined,
       workStyle: filterValues.workStyle || undefined,
       jobCategory: filterValues.jobCategory || undefined,
+      jobSubcategory: filterValues.jobSubcategory || undefined,
       location: filterValues.location || undefined,
     })
       .then((res) => {

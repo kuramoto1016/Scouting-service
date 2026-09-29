@@ -1,19 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { DesiredRole } from "@/lib/api";
-
-const SUGGESTED_ROLES = [
-  "バックエンドエンジニア",
-  "フロントエンドエンジニア",
-  "フルスタックエンジニア",
-  "モバイルアプリエンジニア",
-  "インフラ・SREエンジニア",
-  "データサイエンティスト",
-  "機械学習エンジニア",
-  "QA・テストエンジニア",
-  "UI/UXデザイナー",
-  "プロダクトマネージャー",
-];
+import { JOB_TAXONOMY, JobCategoryKey, JOB_CATEGORY_KEYS, subcategoryKeysFor, jobSubcategoryLabel } from "@/lib/job-taxonomy";
 
 const MAX_ROLES = 3;
 
@@ -24,17 +13,28 @@ export function DesiredRolePicker({
   value: DesiredRole[];
   onChange: (value: DesiredRole[]) => void;
 }) {
-  const sorted = value.slice().sort((a, b) => a.priority - b.priority);
-  const selectedRoles = new Set(sorted.map((r) => r.role));
+  const [pendingCategory, setPendingCategory] = useState<JobCategoryKey | "">("");
+  const [pendingSubcategory, setPendingSubcategory] = useState("");
 
-  const toggleRole = (role: string) => {
-    if (selectedRoles.has(role)) {
-      const next = sorted.filter((r) => r.role !== role).map((r, i) => ({ role: r.role, priority: i + 1 }));
-      onChange(next);
-      return;
-    }
+  const sorted = value.slice().sort((a, b) => a.priority - b.priority);
+  const isSelected = (category: string, subcategory: string) =>
+    sorted.some((r) => r.job_category === category && r.job_subcategory === subcategory);
+
+  const addRole = () => {
+    if (!pendingCategory || !pendingSubcategory) return;
     if (sorted.length >= MAX_ROLES) return;
-    onChange([...sorted, { role, priority: sorted.length + 1 }]);
+    if (isSelected(pendingCategory, pendingSubcategory)) return;
+
+    onChange([...sorted, { job_category: pendingCategory, job_subcategory: pendingSubcategory, priority: sorted.length + 1 }]);
+    setPendingCategory("");
+    setPendingSubcategory("");
+  };
+
+  const removeRole = (subcategory: string) => {
+    const next = sorted
+      .filter((r) => r.job_subcategory !== subcategory)
+      .map((r, i) => ({ ...r, priority: i + 1 }));
+    onChange(next);
   };
 
   const move = (index: number, direction: -1 | 1) => {
@@ -42,40 +42,60 @@ export function DesiredRolePicker({
     if (target < 0 || target >= sorted.length) return;
     const next = sorted.slice();
     [next[index], next[target]] = [next[target], next[index]];
-    onChange(next.map((r, i) => ({ role: r.role, priority: i + 1 })));
+    onChange(next.map((r, i) => ({ ...r, priority: i + 1 })));
   };
+
+  const subcategoryOptions = subcategoryKeysFor(pendingCategory);
 
   return (
     <div>
-      <div className="skill-picker-suggestions">
-        {SUGGESTED_ROLES.map((role) => {
-          const selected = selectedRoles.has(role);
-          const disabled = !selected && sorted.length >= MAX_ROLES;
-          return (
-            <button
-              key={role}
-              type="button"
-              className={`skill-chip ${selected ? "selected" : ""}`}
-              onClick={() => toggleRole(role)}
-              disabled={disabled}
-              aria-pressed={selected}
-            >
-              {selected && "✓ "}
-              {role}
-            </button>
-          );
-        })}
+      <div className="desired-role-add-row">
+        <select
+          value={pendingCategory}
+          onChange={(e) => {
+            setPendingCategory(e.target.value as JobCategoryKey | "");
+            setPendingSubcategory("");
+          }}
+        >
+          <option value="">大分類を選択</option>
+          {JOB_CATEGORY_KEYS.map((category) => (
+            <option key={category} value={category}>
+              {JOB_TAXONOMY[category].label}
+            </option>
+          ))}
+        </select>
+        <select
+          value={pendingSubcategory}
+          onChange={(e) => setPendingSubcategory(e.target.value)}
+          disabled={!pendingCategory}
+        >
+          <option value="">小分類を選択</option>
+          {subcategoryOptions.map((subcategory) => (
+            <option key={subcategory} value={subcategory}>
+              {jobSubcategoryLabel(pendingCategory, subcategory)}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          className="btn-secondary"
+          onClick={addRole}
+          disabled={!pendingCategory || !pendingSubcategory || sorted.length >= MAX_ROLES}
+        >
+          追加
+        </button>
       </div>
 
       {sorted.length > 0 && (
         <ol className="desired-role-order-list">
           {sorted.map((r, index) => (
-            <li key={r.role}>
-              <span className="tag">{index + 1}位</span> {r.role}
+            <li key={r.job_subcategory}>
+              <span className="tag">{index + 1}位</span> {JOB_TAXONOMY[r.job_category as JobCategoryKey]?.label ?? r.job_category}
+              ／{jobSubcategoryLabel(r.job_category, r.job_subcategory)}
               <span className="desired-role-order-controls">
                 <button
                   type="button"
-                  aria-label={`${r.role}を上に移動`}
+                  aria-label="上に移動"
                   onClick={() => move(index, -1)}
                   disabled={index === 0}
                 >
@@ -83,11 +103,14 @@ export function DesiredRolePicker({
                 </button>
                 <button
                   type="button"
-                  aria-label={`${r.role}を下に移動`}
+                  aria-label="下に移動"
                   onClick={() => move(index, 1)}
                   disabled={index === sorted.length - 1}
                 >
                   ↓
+                </button>
+                <button type="button" aria-label="削除" onClick={() => removeRole(r.job_subcategory)}>
+                  ×
                 </button>
               </span>
             </li>

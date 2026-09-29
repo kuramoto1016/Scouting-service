@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_28_030003) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_29_020001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -57,7 +57,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_030003) do
     t.text "description"
     t.date "ends_on"
     t.integer "graduation_year"
-    t.integer "job_category"
+    t.string "job_category"
+    t.string "job_subcategory"
     t.string "location"
     t.string "skills", default: [], null: false, array: true
     t.date "starts_on"
@@ -67,6 +68,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_030003) do
     t.index ["company_id"], name: "index_job_postings_on_company_id"
     t.index ["graduation_year"], name: "index_job_postings_on_graduation_year"
     t.index ["job_category"], name: "index_job_postings_on_job_category"
+    t.index ["job_subcategory"], name: "index_job_postings_on_job_subcategory"
     t.index ["skills"], name: "index_job_postings_on_skills", using: :gin
     t.index ["work_style"], name: "index_job_postings_on_work_style"
   end
@@ -100,13 +102,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_030003) do
 
   create_table "student_desired_roles", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.string "job_category", null: false
+    t.string "job_subcategory", null: false
     t.integer "priority", null: false
-    t.string "role", null: false
     t.bigint "student_profile_id", null: false
     t.datetime "updated_at", null: false
+    t.index ["student_profile_id", "job_subcategory"], name: "index_desired_roles_on_profile_and_subcategory", unique: true
     t.index ["student_profile_id", "priority"], name: "index_desired_roles_on_profile_and_priority", unique: true
-    t.index ["student_profile_id", "role"], name: "index_desired_roles_on_profile_and_role", unique: true
     t.index ["student_profile_id"], name: "index_student_desired_roles_on_student_profile_id"
+  end
+
+  create_table "student_highlights", force: :cascade do |t|
+    t.text "body", null: false
+    t.datetime "created_at", null: false
+    t.integer "position", default: 0, null: false
+    t.bigint "student_profile_id", null: false
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.index ["student_profile_id", "position"], name: "index_student_highlights_on_student_profile_id_and_position"
+    t.index ["student_profile_id"], name: "index_student_highlights_on_student_profile_id"
   end
 
   create_table "student_profiles", force: :cascade do |t|
@@ -143,6 +157,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_030003) do
   add_foreign_key "messages", "interns", column: "sender_intern_id"
   add_foreign_key "portfolio_items", "student_profiles"
   add_foreign_key "student_desired_roles", "student_profiles"
+  add_foreign_key "student_highlights", "student_profiles"
   add_foreign_key "student_profiles", "interns"
   add_foreign_key "student_skills", "student_profiles"
 end

@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { updateSkills, ApiError, Intern, StudentSkillInput } from "@/lib/api";
 import { SkillEditor } from "@/components/SkillEditor";
 import { useUnsavedChangesGuard } from "@/lib/useUnsavedChangesGuard";
+import { JobCategoryKey } from "@/lib/job-taxonomy";
 
 function skillsKey(skills: StudentSkillInput[]): string {
   return JSON.stringify(
@@ -22,6 +23,9 @@ export function SkillsForm({ intern }: { intern: Intern }) {
 
   const initialSkills = intern.skills.map((s) => ({ name: s.name, category: s.category, level: s.level }));
   const [skills, setSkills] = useState<StudentSkillInput[]>(initialSkills);
+  const desiredJobCategories = Array.from(
+    new Set(intern.desired_conditions.desired_roles.map((r) => r.job_category))
+  ) as JobCategoryKey[];
   const [errors, setErrors] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
@@ -51,7 +55,7 @@ export function SkillsForm({ intern }: { intern: Intern }) {
 
   return (
     <form onSubmit={handleSubmit} className="form-wide">
-      <SkillEditor value={skills} onChange={setSkills} />
+      <SkillEditor value={skills} onChange={setSkills} desiredJobCategories={desiredJobCategories} />
       {errors.length > 0 && (
         <div className="error-text">
           {errors.map((e) => (

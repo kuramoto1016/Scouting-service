@@ -8,6 +8,7 @@ import {
   SECTION_LABELS,
   formatGraduationYearMonth,
 } from "@/lib/profile-labels";
+import { jobSubcategoryLabel } from "@/lib/job-taxonomy";
 
 function splitTags(value: string | null): string[] {
   return value
@@ -64,7 +65,7 @@ export function ProfileView({
   editable: boolean;
   editHrefFor?: (section: ProfileSection) => string;
 }) {
-  const { basic_info, desired_conditions, skills, portfolio_items, self_pr, links } = intern;
+  const { basic_info, desired_conditions, skills, portfolio_items, highlights, self_pr, links } = intern;
   const missing = new Set(intern.missing_sections);
   const editHref = (section: ProfileSection) => editHrefFor?.(section);
 
@@ -114,8 +115,9 @@ export function ProfileView({
                   .slice()
                   .sort((a, b) => a.priority - b.priority)
                   .map((r) => (
-                    <li key={r.role}>
-                      <span className="tag">{r.priority}位</span> {r.role}
+                    <li key={r.job_subcategory}>
+                      <span className="tag">{r.priority}位</span>{" "}
+                      {jobSubcategoryLabel(r.job_category, r.job_subcategory)}
                     </li>
                   ))}
               </ol>
@@ -208,6 +210,27 @@ export function ProfileView({
                     </a>
                   )}
                 </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* 学生時代に力を入れたこと */}
+      <section className="profile-section">
+        <SectionHeader
+          title={SECTION_LABELS.highlights}
+          editable={editable}
+          editHref={editHref("highlights")}
+        />
+        {missing.has("highlights") ? (
+          <EmptySection editable={editable} editHref={editHref("highlights")} />
+        ) : (
+          <div className="portfolio-item-list">
+            {highlights.map((highlight) => (
+              <div key={highlight.id} className="card portfolio-item-card">
+                <div className="card-title">{highlight.title}</div>
+                <p style={{ whiteSpace: "pre-wrap" }}>{highlight.body}</p>
               </div>
             ))}
           </div>

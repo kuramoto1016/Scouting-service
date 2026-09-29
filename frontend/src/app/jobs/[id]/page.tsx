@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { fetchJobPosting, JobPosting, ApiError } from "@/lib/api";
-import { WORK_STYLE_LABELS, JOB_CATEGORY_LABELS, formatDateRange } from "@/lib/job-posting-labels";
+import { WORK_STYLE_LABELS, formatDateRange } from "@/lib/job-posting-labels";
+import { jobCategoryLabel, jobSubcategoryLabel } from "@/lib/job-taxonomy";
 
 export default function JobDetailPage() {
   const params = useParams<{ id: string }>();
@@ -52,7 +53,12 @@ export default function JobDetailPage() {
         <div className="card-meta">{job.company.name}</div>
 
         <div className="tag-list" style={{ margin: "0.75rem 0" }}>
-          {job.job_category && <span className="tag">{JOB_CATEGORY_LABELS[job.job_category]}</span>}
+          {job.job_category && (
+            <span className="tag">
+              {jobCategoryLabel(job.job_category)}
+              {job.job_subcategory && `／${jobSubcategoryLabel(job.job_category, job.job_subcategory)}`}
+            </span>
+          )}
           {job.work_style && <span className="tag tag-outline">{WORK_STYLE_LABELS[job.work_style]}</span>}
           {job.graduation_year && <span className="tag tag-outline">{job.graduation_year}年卒</span>}
         </div>

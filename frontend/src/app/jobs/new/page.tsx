@@ -3,8 +3,9 @@
 import { useEffect, useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
-import { createJobPosting, ApiError, WorkStyle, JobCategory } from "@/lib/api";
-import { WORK_STYLE_LABELS, JOB_CATEGORY_LABELS, WORK_STYLE_OPTIONS, JOB_CATEGORY_OPTIONS } from "@/lib/job-posting-labels";
+import { createJobPosting, ApiError, WorkStyle } from "@/lib/api";
+import { WORK_STYLE_LABELS, WORK_STYLE_OPTIONS } from "@/lib/job-posting-labels";
+import { JOB_TAXONOMY, JobCategoryKey, JOB_CATEGORY_KEYS, subcategoryKeysFor, jobSubcategoryLabel } from "@/lib/job-taxonomy";
 
 export default function NewJobPage() {
   const { token, accountType, loading } = useAuth();
@@ -16,7 +17,8 @@ export default function NewJobPage() {
   const [endsOn, setEndsOn] = useState("");
   const [workStyle, setWorkStyle] = useState<WorkStyle | "">("");
   const [location, setLocation] = useState("");
-  const [jobCategory, setJobCategory] = useState<JobCategory | "">("");
+  const [jobCategory, setJobCategory] = useState<JobCategoryKey | "">("");
+  const [jobSubcategory, setJobSubcategory] = useState("");
   const [skillsInput, setSkillsInput] = useState("");
   const [errors, setErrors] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -47,6 +49,7 @@ export default function NewJobPage() {
         work_style: workStyle || null,
         location: location || null,
         job_category: jobCategory || null,
+        job_subcategory: jobSubcategory || null,
         skills: skillsInput
           .split(",")
           .map((s) => s.trim())
@@ -111,12 +114,33 @@ export default function NewJobPage() {
           />
         </label>
         <label>
-          職種カテゴリ
-          <select value={jobCategory} onChange={(e) => setJobCategory(e.target.value as JobCategory | "")}>
+          職種（大分類）
+          <select
+            value={jobCategory}
+            onChange={(e) => {
+              setJobCategory(e.target.value as JobCategoryKey | "");
+              setJobSubcategory("");
+            }}
+          >
             <option value="">指定なし</option>
-            {JOB_CATEGORY_OPTIONS.map((category) => (
+            {JOB_CATEGORY_KEYS.map((category) => (
               <option key={category} value={category}>
-                {JOB_CATEGORY_LABELS[category]}
+                {JOB_TAXONOMY[category].label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          職種（小分類）
+          <select
+            value={jobSubcategory}
+            onChange={(e) => setJobSubcategory(e.target.value)}
+            disabled={!jobCategory}
+          >
+            <option value="">指定なし</option>
+            {subcategoryKeysFor(jobCategory).map((subcategory) => (
+              <option key={subcategory} value={subcategory}>
+                {jobSubcategoryLabel(jobCategory, subcategory)}
               </option>
             ))}
           </select>

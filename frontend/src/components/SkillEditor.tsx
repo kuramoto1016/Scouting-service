@@ -3,22 +3,70 @@
 import { useState } from "react";
 import { SkillCategory, SkillLevel, StudentSkillInput } from "@/lib/api";
 import { SKILL_CATEGORY_LABELS, SKILL_LEVEL_LABELS } from "@/lib/profile-labels";
+import { JobCategoryKey } from "@/lib/job-taxonomy";
 
-const SUGGESTED_SKILLS_BY_CATEGORY: Record<SkillCategory, string[]> = {
+const ENGINEERING_SKILLS: Record<SkillCategory, string[]> = {
   language: ["Ruby", "Python", "JavaScript", "TypeScript", "Java", "Go", "PHP", "C++", "C#", "Swift", "Kotlin", "SQL"],
   framework: ["Ruby on Rails", "React", "Next.js", "Vue.js", "Django", "Flask", "Spring", "TensorFlow", "PyTorch"],
   tool: ["Figma", "Docker", "Git", "AWS", "GCP", "Terraform"],
 };
 
+const DESIGN_SKILLS: Record<SkillCategory, string[]> = {
+  language: [],
+  framework: [],
+  tool: ["Figma", "Adobe Illustrator", "Adobe Photoshop", "Adobe Premiere Pro", "Adobe XD", "Canva"],
+};
+
+const PLANNING_MARKETING_SKILLS: Record<SkillCategory, string[]> = {
+  language: [],
+  framework: [],
+  tool: ["Googleアナリティクス", "SEOツール", "SNS運用", "Excel", "PowerPoint", "SQL"],
+};
+
+const SALES_CS_SKILLS: Record<SkillCategory, string[]> = {
+  language: [],
+  framework: [],
+  tool: ["Salesforce", "HubSpot", "Excel", "PowerPoint"],
+};
+
+const CORPORATE_SKILLS: Record<SkillCategory, string[]> = {
+  language: [],
+  framework: [],
+  tool: ["Excel", "PowerPoint", "簿記", "労務管理システム"],
+};
+
+const RESEARCH_SKILLS: Record<SkillCategory, string[]> = {
+  language: ["Python", "R", "SQL"],
+  framework: [],
+  tool: ["統計解析ツール", "実験機器の取り扱い"],
+};
+
+const SKILLS_BY_JOB_CATEGORY: Record<JobCategoryKey, Record<SkillCategory, string[]>> = {
+  engineering: ENGINEERING_SKILLS,
+  design: DESIGN_SKILLS,
+  planning_marketing: PLANNING_MARKETING_SKILLS,
+  sales_cs: SALES_CS_SKILLS,
+  corporate: CORPORATE_SKILLS,
+  research: RESEARCH_SKILLS,
+};
+
 const CATEGORIES: SkillCategory[] = ["language", "framework", "tool"];
 const LEVELS: SkillLevel[] = ["class_experience", "personal", "team"];
+
+function suggestedSkillsFor(jobCategories: JobCategoryKey[], category: SkillCategory): string[] {
+  const relevant = jobCategories.length > 0 ? jobCategories : (["engineering"] as JobCategoryKey[]);
+  const merged = relevant.flatMap((jc) => SKILLS_BY_JOB_CATEGORY[jc]?.[category] ?? []);
+  return Array.from(new Set(merged));
+}
 
 export function SkillEditor({
   value,
   onChange,
+  desiredJobCategories = [],
 }: {
   value: StudentSkillInput[];
   onChange: (value: StudentSkillInput[]) => void;
+  desiredJobCategories?: JobCategoryKey[];
 }) {
   const [activeCategory, setActiveCategory] = useState<SkillCategory>("language");
   const [search, setSearch] = useState("");
@@ -39,7 +87,7 @@ export function SkillEditor({
     onChange(value.map((s) => (s.name === name ? { ...s, level } : s)));
   };
 
-  const candidates = SUGGESTED_SKILLS_BY_CATEGORY[activeCategory].filter((name) =>
+  const candidates = suggestedSkillsFor(desiredJobCategories, activeCategory).filter((name) =>
     name.toLowerCase().includes(search.toLowerCase())
   );
 

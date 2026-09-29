@@ -16,7 +16,10 @@ students = [
       bio: "Webアプリケーション開発に興味があり、個人開発でRailsとReactを使ったサービスを作っています。",
       career_goal: "将来はバックエンドを軸にしたフルスタックエンジニアとして活躍したいです。"
     },
-    desired_roles: [ { role: "バックエンドエンジニア", priority: 1 }, { role: "フルスタックエンジニア", priority: 2 } ],
+    desired_roles: [
+      { job_category: "engineering", job_subcategory: "backend", priority: 1 },
+      { job_category: "engineering", job_subcategory: "fullstack", priority: 2 }
+    ],
     skills: [
       { name: "Ruby", category: :language, level: :personal },
       { name: "Ruby on Rails", category: :framework, level: :personal },
@@ -51,7 +54,7 @@ students = [
       bio: "機械学習を使ったデータ分析に取り組んでいます。ハッカソン参加経験もあります。",
       career_goal: "データサイエンティストとして事業の意思決定に貢献したいです。"
     },
-    desired_roles: [ { role: "データサイエンティスト", priority: 1 } ],
+    desired_roles: [ { job_category: "engineering", job_subcategory: "data", priority: 1 } ],
     skills: [
       { name: "Python", category: :language, level: :personal },
       { name: "SQL", category: :language, level: :class_experience },
@@ -86,7 +89,10 @@ students = [
       bio: "デザインとフロントエンド実装の両方に興味があります。",
       career_goal: "UI/UXデザイナーとしてユーザー体験の改善に携わりたいです。"
     },
-    desired_roles: [ { role: "UI/UXデザイナー", priority: 1 }, { role: "フロントエンドエンジニア", priority: 2 } ],
+    desired_roles: [
+      { job_category: "design", job_subcategory: "ui_ux", priority: 1 },
+      { job_category: "engineering", job_subcategory: "frontend", priority: 2 }
+    ],
     skills: [
       { name: "Figma", category: :tool, level: :personal },
       { name: "TypeScript", category: :language, level: :class_experience }
@@ -113,7 +119,10 @@ students.each do |entry|
   profile.update!(entry[:profile])
 
   entry[:desired_roles].each do |role_attrs|
-    profile.student_desired_roles.find_or_create_by!(role: role_attrs[:role]) { |r| r.priority = role_attrs[:priority] }
+    profile.student_desired_roles.find_or_create_by!(job_subcategory: role_attrs[:job_subcategory]) do |r|
+      r.job_category = role_attrs[:job_category]
+      r.priority = role_attrs[:priority]
+    end
   end
 
   entry[:skills].each do |skill_attrs|
@@ -145,7 +154,8 @@ companies_and_jobs = [
       ends_on: Date.new(2026, 12, 15),
       work_style: :hybrid,
       location: "東京都渋谷区",
-      job_category: :backend,
+      job_category: "engineering",
+      job_subcategory: "backend",
       skills: %w[Ruby Ruby\ on\ Rails PostgreSQL]
     }
   },
@@ -163,7 +173,8 @@ companies_and_jobs = [
       ends_on: Date.new(2026, 10, 31),
       work_style: :online,
       location: nil,
-      job_category: :design,
+      job_category: "design",
+      job_subcategory: "ui_ux",
       skills: %w[Figma UIデザイン プロトタイピング]
     }
   },
@@ -181,7 +192,8 @@ companies_and_jobs = [
       ends_on: Date.new(2026, 11, 20),
       work_style: :onsite,
       location: "大阪府大阪市",
-      job_category: :infra,
+      job_category: "engineering",
+      job_subcategory: "infra_sre",
       skills: %w[AWS Terraform Docker]
     }
   },
@@ -199,7 +211,8 @@ companies_and_jobs = [
       ends_on: Date.new(2027, 1, 10),
       work_style: :hybrid,
       location: "福岡県福岡市",
-      job_category: :mobile,
+      job_category: "engineering",
+      job_subcategory: "mobile",
       skills: %w[Swift Kotlin]
     }
   },
@@ -217,7 +230,8 @@ companies_and_jobs = [
       ends_on: Date.new(2026, 11, 5),
       work_style: :online,
       location: nil,
-      job_category: :data,
+      job_category: "engineering",
+      job_subcategory: "data",
       skills: %w[Python SQL 機械学習]
     }
   },
@@ -235,7 +249,8 @@ companies_and_jobs = [
       ends_on: Date.new(2026, 11, 30),
       work_style: :hybrid,
       location: "東京都新宿区",
-      job_category: :frontend,
+      job_category: "engineering",
+      job_subcategory: "frontend",
       skills: %w[TypeScript React Next.js]
     }
   },
@@ -253,7 +268,8 @@ companies_and_jobs = [
       ends_on: Date.new(2026, 11, 8),
       work_style: :onsite,
       location: "愛知県名古屋市",
-      job_category: :backend,
+      job_category: "engineering",
+      job_subcategory: "fullstack",
       skills: %w[TypeScript Node.js React]
     }
   },
@@ -271,7 +287,8 @@ companies_and_jobs = [
       ends_on: Date.new(2026, 12, 1),
       work_style: :online,
       location: nil,
-      job_category: :infra,
+      job_category: "engineering",
+      job_subcategory: "qa",
       skills: %w[Ruby RSpec CI/CD]
     }
   }

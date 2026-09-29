@@ -3,6 +3,7 @@ class StudentProfile < ApplicationRecord
   has_many :student_desired_roles, -> { order(:priority) }, dependent: :destroy
   has_many :student_skills, dependent: :destroy
   has_many :portfolio_items, -> { order(:position) }, dependent: :destroy
+  has_many :student_highlights, -> { order(:position) }, dependent: :destroy
 
   enum :school_type, {
     university: 0,
@@ -19,11 +20,12 @@ class StudentProfile < ApplicationRecord
   # Completion weights must sum to 100. Each represents one profile section;
   # a section counts as complete only if `complete?` below says so.
   COMPLETION_WEIGHTS = {
-    basic_info: 20,
-    desired_conditions: 20,
-    skills: 20,
-    portfolio_items: 20,
-    self_pr: 10,
+    basic_info: 15,
+    desired_conditions: 15,
+    skills: 15,
+    portfolio_items: 15,
+    highlights: 15,
+    self_pr: 15,
     links: 10
   }.freeze
 
@@ -73,6 +75,8 @@ class StudentProfile < ApplicationRecord
       student_skills.any?
     when :portfolio_items
       portfolio_items.any?
+    when :highlights
+      student_highlights.any?
     when :self_pr
       bio.present? && career_goal.present?
     when :links

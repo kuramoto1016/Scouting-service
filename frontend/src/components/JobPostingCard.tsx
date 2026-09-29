@@ -1,12 +1,7 @@
 import Link from "next/link";
 import { JobPosting } from "@/lib/api";
-import {
-  WORK_STYLE_LABELS,
-  JOB_CATEGORY_LABELS,
-  JOB_CATEGORY_GRADIENTS,
-  JOB_CATEGORY_ICONS,
-  formatDateRange,
-} from "@/lib/job-posting-labels";
+import { WORK_STYLE_LABELS, JOB_CATEGORY_GRADIENTS, JOB_CATEGORY_ICONS, formatDateRange } from "@/lib/job-posting-labels";
+import { JobCategoryKey, jobSubcategoryLabel } from "@/lib/job-taxonomy";
 
 const MAX_VISIBLE_SKILLS = 3;
 
@@ -26,10 +21,20 @@ export function JobPostingCard({ job }: { job: JobPosting }) {
       {job.deadline_soon && <span className="job-card-badge">締切間近</span>}
       <div
         className="job-card-thumb"
-        style={{ background: job.job_category ? JOB_CATEGORY_GRADIENTS[job.job_category] : undefined }}
+        style={{
+          background: job.job_category
+            ? JOB_CATEGORY_GRADIENTS[job.job_category as JobCategoryKey]
+            : undefined,
+        }}
       >
-        <span className="job-card-thumb-icon">{job.job_category ? JOB_CATEGORY_ICONS[job.job_category] : "✦"}</span>
-        {job.job_category && <span className="job-card-thumb-label">{JOB_CATEGORY_LABELS[job.job_category]}</span>}
+        <span className="job-card-thumb-icon">
+          {job.job_category ? JOB_CATEGORY_ICONS[job.job_category as JobCategoryKey] : "✦"}
+        </span>
+        {job.job_category && (
+          <span className="job-card-thumb-label">
+            {jobSubcategoryLabel(job.job_category, job.job_subcategory)}
+          </span>
+        )}
       </div>
       <div className="job-card-body">
         <h3 className="job-card-title">{job.title}</h3>

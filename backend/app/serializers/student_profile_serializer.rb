@@ -17,6 +17,7 @@ class StudentProfileSerializer
       desired_conditions: desired_conditions,
       skills: skills,
       portfolio_items: portfolio_items,
+      highlights: highlights,
       self_pr: self_pr,
       links: links
     }
@@ -35,7 +36,13 @@ class StudentProfileSerializer
 
   def desired_conditions
     {
-      desired_roles: @profile&.student_desired_roles&.map { |r| { role: r.role, priority: r.priority } } || [],
+      desired_roles: @profile&.student_desired_roles&.map do |r|
+        {
+          job_category: r.job_category,
+          job_subcategory: r.job_subcategory,
+          priority: r.priority
+        }
+      end || [],
       desired_location: @profile&.desired_location,
       job_hunting_axes: @profile&.job_hunting_axes
     }
@@ -60,6 +67,12 @@ class StudentProfileSerializer
         other_url: item.other_url,
         position: item.position
       }
+    end
+  end
+
+  def highlights
+    (@profile&.student_highlights || []).map do |highlight|
+      { id: highlight.id, title: highlight.title, body: highlight.body, position: highlight.position }
     end
   end
 

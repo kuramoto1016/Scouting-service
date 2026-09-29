@@ -7,7 +7,7 @@ module Api
 
       DETAIL_FIELDS = %i[
         id title description created_at graduation_year starts_on ends_on
-        work_style location job_category skills
+        work_style location job_category job_subcategory skills
       ].freeze
 
       def index
@@ -15,6 +15,7 @@ module Api
                                   .with_graduation_year(params[:graduation_year])
                                   .with_work_style(params[:work_style])
                                   .with_job_category(params[:job_category])
+                                  .with_job_subcategory(params[:job_subcategory])
                                   .with_location(params[:location])
                                   .order(created_at: :desc)
 
@@ -66,7 +67,7 @@ module Api
       def job_posting_params
         params.require(:job_posting).permit(
           :title, :description, :graduation_year, :starts_on, :ends_on,
-          :work_style, :location, :job_category, skills: []
+          :work_style, :location, :job_category, :job_subcategory, skills: []
         )
       end
 

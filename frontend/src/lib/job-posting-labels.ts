@@ -1,4 +1,5 @@
-import { JobCategory, WorkStyle } from "./api";
+import { WorkStyle } from "./api";
+import { JobCategoryKey, JOB_CATEGORY_KEYS } from "./job-taxonomy";
 
 export const WORK_STYLE_LABELS: Record<WorkStyle, string> = {
   online: "オンライン",
@@ -6,35 +7,27 @@ export const WORK_STYLE_LABELS: Record<WorkStyle, string> = {
   hybrid: "ハイブリッド",
 };
 
-export const JOB_CATEGORY_LABELS: Record<JobCategory, string> = {
-  backend: "バックエンド",
-  frontend: "フロントエンド",
-  mobile: "モバイル",
-  infra: "インフラ",
-  data: "データ",
-  design: "デザイン",
-};
-
-export const JOB_CATEGORY_GRADIENTS: Record<JobCategory, string> = {
-  backend: "linear-gradient(135deg, #1ba7e0, #054a66)",
-  frontend: "linear-gradient(135deg, #6ee7f2, #1ba7e0)",
-  mobile: "linear-gradient(135deg, #7dd3fc, #0369a1)",
-  infra: "linear-gradient(135deg, #38bdf8, #0c4a6e)",
-  data: "linear-gradient(135deg, #a5f3fc, #0891b2)",
-  design: "linear-gradient(135deg, #93c5fd, #1e40af)",
-};
-
-export const JOB_CATEGORY_ICONS: Record<JobCategory, string> = {
-  backend: "⚙",
-  frontend: "▢",
-  mobile: "□",
-  infra: "☁",
-  data: "◈",
-  design: "✦",
-};
-
 export const WORK_STYLE_OPTIONS: WorkStyle[] = ["online", "onsite", "hybrid"];
-export const JOB_CATEGORY_OPTIONS: JobCategory[] = ["backend", "frontend", "mobile", "infra", "data", "design"];
+
+export const JOB_CATEGORY_GRADIENTS: Record<JobCategoryKey, string> = {
+  engineering: "linear-gradient(135deg, #1ba7e0, #054a66)",
+  design: "linear-gradient(135deg, #93c5fd, #1e40af)",
+  planning_marketing: "linear-gradient(135deg, #fbbf24, #b45309)",
+  sales_cs: "linear-gradient(135deg, #86efac, #15803d)",
+  corporate: "linear-gradient(135deg, #c4b5fd, #5b21b6)",
+  research: "linear-gradient(135deg, #a5f3fc, #0891b2)",
+};
+
+export const JOB_CATEGORY_ICONS: Record<JobCategoryKey, string> = {
+  engineering: "⚙",
+  design: "✦",
+  planning_marketing: "◆",
+  sales_cs: "◎",
+  corporate: "▣",
+  research: "◈",
+};
+
+export const JOB_CATEGORY_OPTIONS: JobCategoryKey[] = JOB_CATEGORY_KEYS;
 
 export function formatDateRange(startsOn: string | null, endsOn: string | null): string | null {
   if (!startsOn && !endsOn) return null;

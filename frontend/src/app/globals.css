@@ -908,6 +908,13 @@ button[type="submit"]:disabled {
   gap: 0.4rem;
 }
 
+.desired-role-add-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
 .desired-role-order-list {
   list-style: none;
   display: flex;

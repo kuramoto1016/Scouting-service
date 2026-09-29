@@ -15,7 +15,7 @@ function sortedRolesKey(roles: DesiredRole[]): string {
     roles
       .slice()
       .sort((a, b) => a.priority - b.priority)
-      .map((r) => `${r.priority}:${r.role}`)
+      .map((r) => `${r.priority}:${r.job_category}:${r.job_subcategory}`)
   );
 }
 

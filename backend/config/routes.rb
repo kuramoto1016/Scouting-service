@@ -15,6 +15,8 @@ Rails.application.routes.draw do
         put "student_skills", to: "student_skills#update"
         patch "portfolio_items/reorder", to: "portfolio_items#reorder"
         resources :portfolio_items, only: %i[create update destroy]
+        patch "student_highlights/reorder", to: "student_highlights#reorder"
+        resources :student_highlights, only: %i[create update destroy]
       end
 
       resources :job_postings, only: %i[index show create update destroy]

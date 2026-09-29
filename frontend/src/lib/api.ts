@@ -16,6 +16,7 @@ export type ProfileSection =
   | "desired_conditions"
   | "skills"
   | "portfolio_items"
+  | "highlights"
   | "self_pr"
   | "links";
 
@@ -27,7 +28,8 @@ export interface BasicInfo {
 }
 
 export interface DesiredRole {
-  role: string;
+  job_category: string;
+  job_subcategory: string;
   priority: number;
 }
 
@@ -56,6 +58,13 @@ export interface PortfolioItem {
   position: number;
 }
 
+export interface StudentHighlight {
+  id: number;
+  title: string;
+  body: string;
+  position: number;
+}
+
 export interface SelfPr {
   bio: string | null;
   career_goal: string | null;
@@ -78,6 +87,7 @@ export interface Intern {
   desired_conditions: DesiredConditions;
   skills: StudentSkillEntry[];
   portfolio_items: PortfolioItem[];
+  highlights: StudentHighlight[];
   self_pr: SelfPr;
   links: ProfileLink[];
 }
@@ -98,7 +108,6 @@ export interface Message {
 }
 
 export type WorkStyle = "online" | "onsite" | "hybrid";
-export type JobCategory = "backend" | "frontend" | "mobile" | "infra" | "data" | "design";
 
 export interface JobPosting {
   id: number;
@@ -110,7 +119,8 @@ export interface JobPosting {
   ends_on: string | null;
   work_style: WorkStyle | null;
   location: string | null;
-  job_category: JobCategory | null;
+  job_category: string | null;
+  job_subcategory: string | null;
   skills: string[];
   deadline_soon: boolean;
   company: { id: number; name: string };
@@ -119,7 +129,8 @@ export interface JobPosting {
 export interface JobPostingSearchParams {
   graduationYear?: number | string;
   workStyle?: WorkStyle;
-  jobCategory?: JobCategory;
+  jobCategory?: string;
+  jobSubcategory?: string;
   location?: string;
 }
 
@@ -212,7 +223,7 @@ export function fetchMe(token: string) {
 export interface InternSearchParams {
   keyword?: string;
   skill?: string;
-  jobType?: string;
+  jobSubcategory?: string;
   location?: string;
 }
 
@@ -220,7 +231,7 @@ export function fetchInterns(token: string, search: InternSearchParams = {}) {
   const query = new URLSearchParams();
   if (search.keyword) query.set("keyword", search.keyword);
   if (search.skill) query.set("skill", search.skill);
-  if (search.jobType) query.set("job_type", search.jobType);
+  if (search.jobSubcategory) query.set("job_subcategory", search.jobSubcategory);
   if (search.location) query.set("location", search.location);
 
   const qs = query.toString();
@@ -319,6 +330,47 @@ export function reorderPortfolioItems(token: string, internId: number, orderedId
   });
 }
 
+export interface StudentHighlightInput {
+  title: string;
+  body: string;
+}
+
+export function createStudentHighlight(token: string, internId: number, params: StudentHighlightInput) {
+  return request<Intern>(`/api/v1/interns/${internId}/student_highlights`, {
+    method: "POST",
+    token,
+    body: JSON.stringify({ student_highlight: params }),
+  });
+}
+
+export function updateStudentHighlight(
+  token: string,
+  internId: number,
+  highlightId: number,
+  params: Partial<StudentHighlightInput>
+) {
+  return request<Intern>(`/api/v1/interns/${internId}/student_highlights/${highlightId}`, {
+    method: "PATCH",
+    token,
+    body: JSON.stringify({ student_highlight: params }),
+  });
+}
+
+export function deleteStudentHighlight(token: string, internId: number, highlightId: number) {
+  return request<Intern>(`/api/v1/interns/${internId}/student_highlights/${highlightId}`, {
+    method: "DELETE",
+    token,
+  });
+}
+
+export function reorderStudentHighlights(token: string, internId: number, orderedIds: number[]) {
+  return request<Intern>(`/api/v1/interns/${internId}/student_highlights/reorder`, {
+    method: "PATCH",
+    token,
+    body: JSON.stringify({ ordered_ids: orderedIds }),
+  });
+}
+
 export interface ConversationParticipant {
   id: number;
   name: string;
@@ -379,6 +431,7 @@ export function fetchJobPostings(search: JobPostingSearchParams = {}) {
   if (search.graduationYear) query.set("graduation_year", String(search.graduationYear));
   if (search.workStyle) query.set("work_style", search.workStyle);
   if (search.jobCategory) query.set("job_category", search.jobCategory);
+  if (search.jobSubcategory) query.set("job_subcategory", search.jobSubcategory);
   if (search.location) query.set("location", search.location);
 
   const qs = query.toString();
@@ -397,7 +450,8 @@ export interface JobPostingInput {
   ends_on?: string | null;
   work_style?: WorkStyle | null;
   location?: string | null;
-  job_category?: JobCategory | null;
+  job_category?: string | null;
+  job_subcategory?: string | null;
   skills?: string[];
 }
 

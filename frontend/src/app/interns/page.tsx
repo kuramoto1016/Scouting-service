@@ -7,8 +7,8 @@ import { useAuth } from "@/lib/auth-context";
 import { fetchInterns, createConversation, Intern, ApiError } from "@/lib/api";
 import { InternSummary } from "@/components/InternSummary";
 import { SUGGESTED_SKILLS } from "@/components/SkillPicker";
-import { SUGGESTED_JOB_TYPES } from "@/components/JobTypePicker";
 import { SUGGESTED_LOCATIONS } from "@/components/LocationPicker";
+import { JOB_TAXONOMY, JobCategoryKey, JOB_CATEGORY_KEYS, subcategoryKeysFor, jobSubcategoryLabel } from "@/lib/job-taxonomy";
 
 export default function InternsListPage() {
   const { token, accountType, loading } = useAuth();
@@ -18,7 +18,8 @@ export default function InternsListPage() {
 
   const [keywordInput, setKeywordInput] = useState("");
   const [skill, setSkill] = useState("");
-  const [jobType, setJobType] = useState("");
+  const [jobCategory, setJobCategory] = useState<JobCategoryKey | "">("");
+  const [jobSubcategory, setJobSubcategory] = useState("");
   const [location, setLocation] = useState("");
   const [appliedKeyword, setAppliedKeyword] = useState("");
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
@@ -42,7 +43,7 @@ export default function InternsListPage() {
     let cancelled = false;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- guarded by `cancelled` below
     setLoadingInterns(true);
-    fetchInterns(token, { keyword: appliedKeyword, skill, jobType, location })
+    fetchInterns(token, { keyword: appliedKeyword, skill, jobSubcategory, location })
       .then((data) => {
         if (cancelled) return;
         setInterns(data);
@@ -59,7 +60,7 @@ export default function InternsListPage() {
     return () => {
       cancelled = true;
     };
-  }, [token, accountType, appliedKeyword, skill, jobType, location]);
+  }, [token, accountType, appliedKeyword, skill, jobSubcategory, location]);
 
   const handleSearchSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -70,7 +71,8 @@ export default function InternsListPage() {
     setKeywordInput("");
     setAppliedKeyword("");
     setSkill("");
-    setJobType("");
+    setJobCategory("");
+    setJobSubcategory("");
     setLocation("");
   };
 
@@ -133,12 +135,33 @@ export default function InternsListPage() {
           </select>
         </label>
         <label>
-          希望職種
-          <select value={jobType} onChange={(e) => setJobType(e.target.value)}>
+          希望職種（大分類）
+          <select
+            value={jobCategory}
+            onChange={(e) => {
+              setJobCategory(e.target.value as JobCategoryKey | "");
+              setJobSubcategory("");
+            }}
+          >
             <option value="">指定なし</option>
-            {SUGGESTED_JOB_TYPES.map((j) => (
-              <option key={j} value={j}>
-                {j}
+            {JOB_CATEGORY_KEYS.map((category) => (
+              <option key={category} value={category}>
+                {JOB_TAXONOMY[category].label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          希望職種（小分類）
+          <select
+            value={jobSubcategory}
+            onChange={(e) => setJobSubcategory(e.target.value)}
+            disabled={!jobCategory}
+          >
+            <option value="">指定なし</option>
+            {subcategoryKeysFor(jobCategory).map((subcategory) => (
+              <option key={subcategory} value={subcategory}>
+                {jobSubcategoryLabel(jobCategory, subcategory)}
               </option>
             ))}
           </select>
