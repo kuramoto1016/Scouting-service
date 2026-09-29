@@ -674,6 +674,18 @@ button[type="submit"]:disabled {
   margin-top: 0.5rem;
 }
 
+.teams-attachment-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+
+.teams-attachment-error {
+  color: #b42318;
+  font-size: 0.78rem;
+}
+
 .teams-attachment-image-link {
   display: inline-block;
 }

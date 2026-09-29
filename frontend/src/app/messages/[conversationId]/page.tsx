@@ -50,6 +50,7 @@ const MESSAGE_BODY_MAX_LENGTH = 3000;
 
 function AuthenticatedAttachment({ attachment, token }: { attachment: MessageAttachment; token: string }) {
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
+  const [attachmentError, setAttachmentError] = useState<string | null>(null);
   const imageLinkRef = useRef<HTMLAnchorElement>(null);
   const objectUrlRef = useRef<string | null>(null);
   const isImage = isImageAttachment(attachment.content_type);
@@ -60,6 +61,7 @@ function AuthenticatedAttachment({ attachment, token }: { attachment: MessageAtt
     if (!element) return;
 
     let disposed = false;
+    let isIntersecting = false;
     let loading = false;
 
     const releaseObjectUrl = (updateState: boolean) => {
@@ -77,7 +79,7 @@ function AuthenticatedAttachment({ attachment, token }: { attachment: MessageAtt
       fetchAttachmentBlob(token, attachment.url)
         .then((blob) => {
           const nextObjectUrl = URL.createObjectURL(blob);
-          if (disposed) {
+          if (disposed || !isIntersecting) {
             URL.revokeObjectURL(nextObjectUrl);
             return;
           }
@@ -94,7 +96,8 @@ function AuthenticatedAttachment({ attachment, token }: { attachment: MessageAtt
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
+        isIntersecting = entry.isIntersecting;
+        if (isIntersecting) {
           loadObjectUrl();
         } else {
           releaseObjectUrl(true);
@@ -116,52 +119,71 @@ function AuthenticatedAttachment({ attachment, token }: { attachment: MessageAtt
     if (objectUrl) return;
 
     event.preventDefault();
-    const attachmentWindow = window.open("about:blank", "_blank");
+    const attachmentWindow = isImage ? window.open("about:blank", "_blank") : null;
     if (attachmentWindow) attachmentWindow.opener = null;
 
     try {
+      setAttachmentError(null);
       const blob = await fetchAttachmentBlob(token, attachment.url);
       const nextObjectUrl = URL.createObjectURL(blob);
-      if (attachmentWindow) {
+      if (isImage && attachmentWindow) {
         attachmentWindow.location.href = nextObjectUrl;
+      } else {
+        const downloadLink = document.createElement("a");
+        downloadLink.href = nextObjectUrl;
+        downloadLink.download = attachment.filename;
+        downloadLink.click();
       }
       window.setTimeout(() => URL.revokeObjectURL(nextObjectUrl), 60_000);
     } catch {
       attachmentWindow?.close();
-      // The message list error banner is reserved for list/send failures.
+      setAttachmentError("添付ファイルを取得できませんでした。");
     }
   };
 
   if (isImage) {
     return (
-      <a
-        ref={imageLinkRef}
-        href={objectUrl ?? attachment.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="teams-attachment-image-link"
-        onClick={openAttachment}
-      >
-        {objectUrl && (
-          // eslint-disable-next-line @next/next/no-img-element -- authenticated user upload rendered from a blob URL
-          <img src={objectUrl} alt={attachment.filename} className="teams-attachment-image" />
+      <span className="teams-attachment-item">
+        <a
+          ref={imageLinkRef}
+          href={objectUrl ?? attachment.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="teams-attachment-image-link"
+          onClick={openAttachment}
+        >
+          {objectUrl && (
+            // eslint-disable-next-line @next/next/no-img-element -- authenticated user upload rendered from a blob URL
+            <img src={objectUrl} alt={attachment.filename} className="teams-attachment-image" />
+          )}
+        </a>
+        {attachmentError && (
+          <span className="teams-attachment-error" role="alert">
+            {attachmentError}
+          </span>
         )}
-      </a>
+      </span>
     );
   }
 
   return (
-    <a
-      href={attachment.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="teams-attachment-file"
-      onClick={openAttachment}
-    >
-      <span className="material-symbols-outlined teams-attachment-icon">attach_file</span>
-      <span className="teams-attachment-name">{attachment.filename}</span>
-      <span className="teams-attachment-size">{formatByteSize(attachment.byte_size)}</span>
-    </a>
+    <span className="teams-attachment-item">
+      <a
+        href={attachment.url}
+        download={attachment.filename}
+        className="teams-attachment-file"
+        onClick={openAttachment}
+      >
+        <span className="material-symbols-outlined teams-attachment-icon">attach_file</span>
+        <span className="teams-attachment-name">{attachment.filename}</span>
+        <span className="teams-attachment-size">{formatByteSize(attachment.byte_size)}</span>
+      </a>
+      {attachmentError && (
+        <span className="teams-attachment-error" role="alert">
+          {attachmentError}
+        </span>
+      )}
+    </span>
   );
 }
 
