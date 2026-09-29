@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { JobPosting } from "@/lib/api";
 import { WORK_STYLE_LABELS, jobCategoryGradient, jobCategoryIcon, formatDateRange } from "@/lib/job-posting-labels";
-import { jobCategoryLabel, jobSubcategoryLabel } from "@/lib/job-taxonomy";
+import { jobCategoryLabel, jobSubcategoryLabel, usesSkillTags } from "@/lib/job-taxonomy";
 
 const MAX_VISIBLE_SKILLS = 3;
 
@@ -13,7 +13,8 @@ export function JobPostingCard({ job }: { job: JobPosting }) {
     job.work_style ? WORK_STYLE_LABELS[job.work_style] : null,
   ].filter(Boolean);
 
-  const visibleSkills = job.skills.slice(0, MAX_VISIBLE_SKILLS);
+  const showSkillTags = usesSkillTags(job.job_category);
+  const visibleSkills = showSkillTags ? job.skills.slice(0, MAX_VISIBLE_SKILLS) : [];
   const extraSkillCount = job.skills.length - visibleSkills.length;
 
   return (
@@ -32,7 +33,7 @@ export function JobPostingCard({ job }: { job: JobPosting }) {
         <div className="job-card-company">{job.company.name}</div>
         {metaParts.length > 0 && <div className="job-card-meta">{metaParts.join("｜")}</div>}
         {job.location && <div className="job-card-location">{job.location}</div>}
-        {job.skills.length > 0 && (
+        {showSkillTags && job.skills.length > 0 && (
           <div className="tag-list job-card-tags">
             {visibleSkills.map((skill) => (
               <span key={skill} className="tag">

@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { fetchJobPosting, JobPosting, ApiError } from "@/lib/api";
 import { WORK_STYLE_LABELS, formatDateRange } from "@/lib/job-posting-labels";
-import { jobCategoryLabel, jobSubcategoryLabel } from "@/lib/job-taxonomy";
+import { jobCategoryLabel, jobSubcategoryLabel, usesSkillTags } from "@/lib/job-taxonomy";
 
 export default function JobDetailPage() {
   const params = useParams<{ id: string }>();
@@ -41,6 +41,7 @@ export default function JobDetailPage() {
   if (!job) return null;
 
   const dateRange = formatDateRange(job.starts_on, job.ends_on);
+  const showSkillTags = usesSkillTags(job.job_category);
 
   return (
     <div>
@@ -73,7 +74,7 @@ export default function JobDetailPage() {
 
         <p style={{ whiteSpace: "pre-wrap", marginBottom: "1rem" }}>{job.description}</p>
 
-        {job.skills.length > 0 && (
+        {showSkillTags && job.skills.length > 0 && (
           <div className="tag-list">
             {job.skills.map((skill) => (
               <span key={skill} className="tag tag-axis">

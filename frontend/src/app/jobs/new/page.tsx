@@ -5,7 +5,14 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { createJobPosting, ApiError, WorkStyle } from "@/lib/api";
 import { WORK_STYLE_LABELS, WORK_STYLE_OPTIONS } from "@/lib/job-posting-labels";
-import { JOB_TAXONOMY, JobCategoryKey, JOB_CATEGORY_KEYS, subcategoryKeysFor, jobSubcategoryLabel } from "@/lib/job-taxonomy";
+import {
+  JOB_TAXONOMY,
+  JobCategoryKey,
+  JOB_CATEGORY_KEYS,
+  subcategoryKeysFor,
+  jobSubcategoryLabel,
+  usesSkillTags,
+} from "@/lib/job-taxonomy";
 import { FieldError } from "@/components/FieldError";
 
 export default function NewJobPage() {
@@ -36,6 +43,8 @@ export default function NewJobPage() {
     }
   }, [loading, token, accountType, router]);
 
+  const showSkillTags = usesSkillTags(jobCategory);
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!token) return;
@@ -53,10 +62,12 @@ export default function NewJobPage() {
         location: location || null,
         job_category: jobCategory || null,
         job_subcategory: jobSubcategory || null,
-        skills: skillsInput
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
+        skills: showSkillTags
+          ? skillsInput
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean)
+          : [],
       });
       router.push("/jobs");
     } catch (err) {
@@ -126,8 +137,10 @@ export default function NewJobPage() {
           <select
             value={jobCategory}
             onChange={(e) => {
-              setJobCategory(e.target.value as JobCategoryKey | "");
+              const nextCategory = e.target.value as JobCategoryKey | "";
+              setJobCategory(nextCategory);
               setJobSubcategory("");
+              if (!usesSkillTags(nextCategory)) setSkillsInput("");
             }}
           >
             <option value="">指定なし</option>
@@ -156,14 +169,16 @@ export default function NewJobPage() {
           {jobCategory && <p className="muted" style={{ fontSize: "0.8rem" }}>大分類を選択した場合、小分類の選択も必要です</p>}
           <FieldError messages={fieldErrors.job_subcategory} />
         </label>
-        <label>
-          スキルタグ（カンマ区切り）
-          <input
-            value={skillsInput}
-            onChange={(e) => setSkillsInput(e.target.value)}
-            placeholder="例: Ruby, TypeScript, React"
-          />
-        </label>
+        {showSkillTags && (
+          <label>
+            技術スキルタグ（カンマ区切り）
+            <input
+              value={skillsInput}
+              onChange={(e) => setSkillsInput(e.target.value)}
+              placeholder="例: Ruby, TypeScript, React"
+            />
+          </label>
+        )}
         {errors.length > 0 && (
           <div className="error-text">
             {errors.map((e) => (

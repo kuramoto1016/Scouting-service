@@ -5,6 +5,8 @@ class JobPosting < ApplicationRecord
 
   DEADLINE_SOON_WITHIN = 7.days
 
+  before_validation :clear_skills_for_non_engineering_roles
+
   validates :title, presence: true
   validates :description, presence: true
   validates :graduation_year, numericality: { only_integer: true }, allow_nil: true
@@ -56,5 +58,9 @@ class JobPosting < ApplicationRecord
     return if JobTaxonomy.valid_pair?(job_category, job_subcategory)
 
     errors.add(:job_subcategory, "が不正です")
+  end
+
+  def clear_skills_for_non_engineering_roles
+    self.skills = [] unless job_category == "engineering"
   end
 end

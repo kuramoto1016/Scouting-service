@@ -86,3 +86,7 @@ export function categoryForSubcategory(subcategory: string | null): JobCategoryK
   );
   return found ?? null;
 }
+
+export function usesSkillTags(category: string | null): boolean {
+  return category === "engineering";
+}
