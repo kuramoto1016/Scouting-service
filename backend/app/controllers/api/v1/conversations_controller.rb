@@ -10,17 +10,18 @@ module Api
       def index
         conversations =
           if current_account.is_a?(Company)
-            current_account.conversations.includes(:company, :interns, messages: :sender_intern)
+            current_account.conversations.includes(:company, :interns)
           elsif current_account.is_a?(Intern)
-            current_account.conversations.includes(:company, :interns, messages: :sender_intern)
+            current_account.conversations.includes(:company, :interns)
           else
             return render_unauthorized
           end
+        latest_messages = latest_messages_by_conversation_id(conversations.map(&:id))
 
         render json: conversations
-          .sort_by { |conversation| conversation.last_activity_at || conversation.created_at }
+          .sort_by { |conversation| latest_messages[conversation.id]&.created_at || conversation.created_at }
           .reverse
-          .map { |c| conversation_json(c, include_company: true) }
+          .map { |c| conversation_json(c, include_company: true, latest_message: latest_messages[c.id]) }
       end
 
       def show
@@ -80,7 +81,7 @@ module Api
       end
 
       def set_conversation
-        @conversation = Conversation.includes(:company, :interns, messages: :sender_intern).find(params[:id])
+        @conversation = Conversation.includes(:company, :interns).find(params[:id])
       end
 
       def authorize_participant!
@@ -94,28 +95,48 @@ module Api
         render_unauthorized unless current_account.is_a?(Company) && @conversation.company_id == current_account.id
       end
 
-      def conversation_json(conversation, include_company: false)
-        latest_message = conversation.messages.max_by(&:created_at)
+      def conversation_json(conversation, include_company: false, latest_message: nil)
+        latest_message ||= latest_message_for(conversation)
         json = {
           id: conversation.id,
           title: conversation.display_title,
           interns: conversation.interns.map { |i| { id: i.id, name: i.name } },
           participant_count: conversation.interns.size + 1,
           last_activity_at: (latest_message&.created_at || conversation.created_at),
-          latest_message: latest_message && message_preview_json(latest_message)
+          latest_message: latest_message && message_preview_json(latest_message, company: conversation.company)
         }
         json[:company] = { id: conversation.company.id, name: conversation.company.name } if include_company
         json
       end
 
-      def message_preview_json(message)
+      def message_preview_json(message, company:)
         {
           id: message.id,
           sender_type: message.sender_type,
-          sender_name: message.sender_type == "company" ? message.conversation.company.name : message.sender_intern&.name,
+          sender_name: message.sender_type == "company" ? company.name : message.sender_intern&.name,
           body: message.body,
           created_at: message.created_at
         }
+      end
+
+      def latest_message_for(conversation)
+        Message.includes(:sender_intern)
+               .where(conversation_id: conversation.id)
+               .order(created_at: :desc, id: :desc)
+               .first
+      end
+
+      def latest_messages_by_conversation_id(conversation_ids)
+        return {} if conversation_ids.empty?
+
+        latest_message_ids = Message
+          .where(conversation_id: conversation_ids)
+          .select("DISTINCT ON (conversation_id) messages.id")
+          .order(Arel.sql("conversation_id, created_at DESC, id DESC"))
+
+        Message.includes(:sender_intern)
+               .where(id: latest_message_ids)
+               .index_by(&:conversation_id)
       end
     end
   end
