@@ -23,7 +23,7 @@ export default function InternSignupPage() {
       const res = await signupIntern({ name, email, password, bio });
       if (res.intern) {
         signIn(res.token, "intern", res.intern);
-        router.push(homePathFor("intern"));
+        router.push(homePathFor());
       }
     } catch (err) {
       if (err instanceof ApiError) setErrors(err.errors);

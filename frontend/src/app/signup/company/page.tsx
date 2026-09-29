@@ -23,7 +23,7 @@ export default function CompanySignupPage() {
       const res = await signupCompany({ name, email, password, description });
       if (res.company) {
         signIn(res.token, "company", res.company);
-        router.push(homePathFor("company"));
+        router.push(homePathFor());
       }
     } catch (err) {
       if (err instanceof ApiError) setErrors(err.errors);

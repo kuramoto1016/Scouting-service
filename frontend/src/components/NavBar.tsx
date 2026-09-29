@@ -14,7 +14,7 @@ export function NavBar() {
     router.push("/");
   };
 
-  const brandHref = !loading && token && accountType ? homePathFor(accountType) : "/";
+  const brandHref = !loading && token && accountType ? homePathFor() : "/";
 
   return (
     <header className="navbar">
@@ -22,6 +22,7 @@ export function NavBar() {
         スカウトサービス
       </Link>
       <nav className="navbar-links">
+        {!loading && token && <Link href="/home">ホーム</Link>}
         <Link href="/jobs">募集一覧</Link>
         {!loading && token && accountType === "company" && <Link href="/interns">インターン生一覧</Link>}
         {!loading && token && (

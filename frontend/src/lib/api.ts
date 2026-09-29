@@ -2,9 +2,9 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3
 
 export type AccountType = "intern" | "company";
 
-/** Where to send a signed-in user by default: interns to job listings, companies to the intern roster. */
-export function homePathFor(accountType: AccountType): string {
-  return accountType === "company" ? "/interns" : "/jobs";
+/** Where to send a signed-in user by default: their personalized dashboard. */
+export function homePathFor(): string {
+  return "/home";
 }
 
 export type SchoolType = "university" | "graduate_school" | "vocational_school" | "technical_college" | "other";
@@ -99,12 +99,21 @@ export interface Company {
   description: string | null;
 }
 
+export interface MessageAttachment {
+  id: number;
+  filename: string;
+  content_type: string;
+  byte_size: number;
+  url: string;
+}
+
 export interface Message {
   id: number;
   sender_type: AccountType;
   sender_intern: { id: number; name: string } | null;
   body: string;
   created_at: string;
+  attachments: MessageAttachment[];
 }
 
 export type WorkStyle = "online" | "onsite" | "hybrid";
@@ -132,6 +141,8 @@ export interface JobPostingSearchParams {
   jobCategory?: string;
   jobSubcategory?: string;
   location?: string;
+  companyId?: number;
+  limit?: number;
 }
 
 export interface JobPostingListResponse {
@@ -157,12 +168,16 @@ async function request<T>(
   path: string,
   options: RequestInit & { token?: string | null } = {}
 ): Promise<T> {
-  const { token, headers, ...rest } = options;
+  const { token, headers, body, ...rest } = options;
+  // When sending FormData (e.g. file uploads), the browser must set its own
+  // multipart Content-Type header (with boundary), so omit the JSON default.
+  const isFormData = typeof FormData !== "undefined" && body instanceof FormData;
 
   const res = await fetch(`${API_BASE_URL}${path}`, {
     ...rest,
+    body,
     headers: {
-      "Content-Type": "application/json",
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...headers,
     },
@@ -429,11 +444,42 @@ export function fetchMessages(token: string, conversationId: number) {
   return request<Message[]>(`/api/v1/conversations/${conversationId}/messages`, { token });
 }
 
-export function sendMessage(token: string, conversationId: number, body: string) {
+export async function fetchAttachmentBlob(token: string, url: string) {
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    const errors: string[] = data.errors ?? (data.error ? [data.error] : ["エラーが発生しました"]);
+    throw new ApiError(res.status, errors, data.field_errors ?? {});
+  }
+
+  return res.blob();
+}
+
+export function sendMessage(
+  token: string,
+  conversationId: number,
+  body: string,
+  attachments: File[] = []
+) {
+  if (attachments.length === 0) {
+    return request<Message>(`/api/v1/conversations/${conversationId}/messages`, {
+      method: "POST",
+      token,
+      body: JSON.stringify({ message: { body } }),
+    });
+  }
+
+  const formData = new FormData();
+  formData.set("message[body]", body);
+  attachments.forEach((file) => formData.append("message[attachments][]", file));
+
   return request<Message>(`/api/v1/conversations/${conversationId}/messages`, {
     method: "POST",
     token,
-    body: JSON.stringify({ message: { body } }),
+    body: formData,
   });
 }
 
@@ -444,6 +490,8 @@ export function fetchJobPostings(search: JobPostingSearchParams = {}) {
   if (search.jobCategory) query.set("job_category", search.jobCategory);
   if (search.jobSubcategory) query.set("job_subcategory", search.jobSubcategory);
   if (search.location) query.set("location", search.location);
+  if (search.companyId) query.set("company_id", String(search.companyId));
+  if (search.limit) query.set("limit", String(search.limit));
 
   const qs = query.toString();
   return request<JobPostingListResponse>(`/api/v1/job_postings${qs ? `?${qs}` : ""}`);

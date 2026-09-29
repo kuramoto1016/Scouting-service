@@ -45,14 +45,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setState({ token, accountType: res.account_type, account: res.account, loading: false });
       })
       .catch((err) => {
-        // トークン自体が無効な場合のみログアウトする。ネットワーク断や
-        // サーバーエラー(5xx)では、有効なセッションを誤って破棄しない。
-        if (err instanceof ApiError && err.status === 401) {
+        if (localStorage.getItem(STORAGE_KEY) !== token) return;
+
+        if (err instanceof ApiError && [401, 403].includes(err.status)) {
           localStorage.removeItem(STORAGE_KEY);
           setState({ token: null, accountType: null, account: null, loading: false });
-        } else {
-          setState((s) => ({ ...s, loading: false }));
+          return;
         }
+
+        setState((s) => (s.token === null || s.token === token ? { token, accountType: null, account: null, loading: false } : s));
       });
   }, []);
 

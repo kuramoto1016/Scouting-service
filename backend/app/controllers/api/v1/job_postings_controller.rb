@@ -17,10 +17,14 @@ module Api
                                   .with_job_category(params[:job_category])
                                   .with_job_subcategory(params[:job_subcategory])
                                   .with_location(params[:location])
+                                  .with_company(params[:company_id])
                                   .order(created_at: :desc)
 
+        total_count = job_postings.count
+        job_postings = job_postings.limit(result_limit) if result_limit
+
         render json: {
-          total_count: job_postings.count,
+          total_count: total_count,
           job_postings: serialize_many(job_postings)
         }
       end
@@ -62,6 +66,16 @@ module Api
 
       def authorize_owner!
         render_unauthorized unless current_account.is_a?(Company) && @job_posting.company_id == current_account.id
+      end
+
+      # Returns a positive integer limit from params[:limit], or nil if absent
+      # or not a valid positive integer (in which case the result set stays
+      # unbounded, matching the pre-existing behavior for requests without it).
+      def result_limit
+        return nil if params[:limit].blank?
+
+        limit = params[:limit].to_i
+        limit.positive? ? limit : nil
       end
 
       def job_posting_params

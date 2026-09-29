@@ -1,16 +1,19 @@
 "use client";
 
-import { useEffect, useState, FormEvent, useRef, useCallback } from "react";
+import { useEffect, useState, FormEvent, ChangeEvent, useRef, useCallback } from "react";
+import type { KeyboardEvent, MouseEvent } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import {
   fetchConversation,
   fetchConversations,
+  fetchAttachmentBlob,
   fetchMessages,
   sendMessage,
   Conversation,
   Message,
+  MessageAttachment,
   ApiError,
 } from "@/lib/api";
 
@@ -32,6 +35,158 @@ function initials(name: string) {
     .toUpperCase();
 }
 
+function formatByteSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes}B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
+}
+
+function isImageAttachment(contentType: string): boolean {
+  return contentType.startsWith("image/");
+}
+
+const MAX_ATTACHMENTS = 5;
+const MESSAGE_BODY_MAX_LENGTH = 3000;
+
+function AuthenticatedAttachment({ attachment, token }: { attachment: MessageAttachment; token: string }) {
+  const [objectUrl, setObjectUrl] = useState<string | null>(null);
+  const [attachmentError, setAttachmentError] = useState<string | null>(null);
+  const imageLinkRef = useRef<HTMLAnchorElement>(null);
+  const objectUrlRef = useRef<string | null>(null);
+  const isImage = isImageAttachment(attachment.content_type);
+
+  useEffect(() => {
+    if (!isImage) return;
+    const element = imageLinkRef.current;
+    if (!element) return;
+
+    let disposed = false;
+    let isIntersecting = false;
+    let loading = false;
+
+    const releaseObjectUrl = (updateState: boolean) => {
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current);
+        objectUrlRef.current = null;
+      }
+      if (updateState) setObjectUrl(null);
+    };
+
+    const loadObjectUrl = () => {
+      if (loading || objectUrlRef.current) return;
+      loading = true;
+
+      fetchAttachmentBlob(token, attachment.url)
+        .then((blob) => {
+          const nextObjectUrl = URL.createObjectURL(blob);
+          if (disposed || !isIntersecting) {
+            URL.revokeObjectURL(nextObjectUrl);
+            return;
+          }
+          objectUrlRef.current = nextObjectUrl;
+          setObjectUrl(nextObjectUrl);
+        })
+        .catch(() => {
+          if (!disposed) setObjectUrl(null);
+        })
+        .finally(() => {
+          loading = false;
+        });
+    };
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        isIntersecting = entry.isIntersecting;
+        if (isIntersecting) {
+          loadObjectUrl();
+        } else {
+          releaseObjectUrl(true);
+        }
+      },
+      { rootMargin: "120px" }
+    );
+
+    observer.observe(element);
+
+    return () => {
+      disposed = true;
+      observer.disconnect();
+      releaseObjectUrl(false);
+    };
+  }, [attachment.url, isImage, token]);
+
+  const openAttachment = async (event: MouseEvent<HTMLAnchorElement>) => {
+    if (objectUrl) return;
+
+    event.preventDefault();
+    const attachmentWindow = isImage ? window.open("about:blank", "_blank") : null;
+    if (attachmentWindow) attachmentWindow.opener = null;
+
+    try {
+      setAttachmentError(null);
+      const blob = await fetchAttachmentBlob(token, attachment.url);
+      const nextObjectUrl = URL.createObjectURL(blob);
+      if (isImage && attachmentWindow) {
+        attachmentWindow.location.href = nextObjectUrl;
+      } else {
+        const downloadLink = document.createElement("a");
+        downloadLink.href = nextObjectUrl;
+        downloadLink.download = attachment.filename;
+        downloadLink.click();
+      }
+      window.setTimeout(() => URL.revokeObjectURL(nextObjectUrl), 60_000);
+    } catch {
+      attachmentWindow?.close();
+      setAttachmentError("添付ファイルを取得できませんでした。");
+    }
+  };
+
+  if (isImage) {
+    return (
+      <span className="teams-attachment-item">
+        <a
+          ref={imageLinkRef}
+          href={objectUrl ?? attachment.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="teams-attachment-image-link"
+          onClick={openAttachment}
+        >
+          {objectUrl && (
+            // eslint-disable-next-line @next/next/no-img-element -- authenticated user upload rendered from a blob URL
+            <img src={objectUrl} alt={attachment.filename} className="teams-attachment-image" />
+          )}
+        </a>
+        {attachmentError && (
+          <span className="teams-attachment-error" role="alert">
+            {attachmentError}
+          </span>
+        )}
+      </span>
+    );
+  }
+
+  return (
+    <span className="teams-attachment-item">
+      <a
+        href={attachment.url}
+        download={attachment.filename}
+        className="teams-attachment-file"
+        onClick={openAttachment}
+      >
+        <span className="material-symbols-outlined teams-attachment-icon">attach_file</span>
+        <span className="teams-attachment-name">{attachment.filename}</span>
+        <span className="teams-attachment-size">{formatByteSize(attachment.byte_size)}</span>
+      </a>
+      {attachmentError && (
+        <span className="teams-attachment-error" role="alert">
+          {attachmentError}
+        </span>
+      )}
+    </span>
+  );
+}
+
 export default function MessagesPage() {
   const params = useParams<{ conversationId: string }>();
   const conversationId = Number(params.conversationId);
@@ -46,7 +201,9 @@ export default function MessagesPage() {
   const [loadingMessages, setLoadingMessages] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (loading) return;
@@ -99,21 +256,49 @@ export default function MessagesPage() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!token || !body.trim()) return;
+  const submitMessage = async () => {
+    if (sending || !token || body.length > MESSAGE_BODY_MAX_LENGTH || (!body.trim() && pendingFiles.length === 0)) return;
+    const filesToSend = pendingFiles;
     setSending(true);
     setError(null);
     try {
-      const msg = await sendMessage(token, conversationId, body.trim());
+      const msg = await sendMessage(token, conversationId, body.trim(), filesToSend);
       setMessages((prev) => [...prev, msg]);
       setBody("");
+      setPendingFiles((prev) => prev.filter((file) => !filesToSend.includes(file)));
       loadConversations();
     } catch (err) {
       setError(err instanceof ApiError ? err.errors.join(", ") : "送信に失敗しました");
     } finally {
       setSending(false);
     }
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    await submitMessage();
+  };
+
+  const handleComposerKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key !== "Enter" || e.shiftKey || e.nativeEvent.isComposing) return;
+
+    e.preventDefault();
+    void submitMessage();
+  };
+
+  const handleFileSelect = (e: ChangeEvent<HTMLInputElement>) => {
+    const selected = Array.from(e.target.files ?? []);
+    if (selected.length === 0) return;
+    setError(null);
+    setPendingFiles((prev) => {
+      const next = [...prev, ...selected].slice(0, MAX_ATTACHMENTS);
+      return next;
+    });
+    e.target.value = "";
+  };
+
+  const removePendingFile = (index: number) => {
+    setPendingFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   if (loading || !token) return null;
@@ -134,18 +319,6 @@ export default function MessagesPage() {
 
   return (
     <div className="teams-shell">
-      <aside className="teams-rail" aria-label="メッセージナビゲーション">
-        <div className="teams-rail-item active" title="チャット">
-          💬
-        </div>
-        <Link href={accountType === "company" ? "/interns" : "/jobs"} className="teams-rail-item" title="探す">
-          🔎
-        </Link>
-        <Link href="/mypage" className="teams-rail-item" title="マイページ">
-          👤
-        </Link>
-      </aside>
-
       <aside className="teams-sidebar">
         <div className="teams-sidebar-header">
           <h1>チャット</h1>
@@ -217,7 +390,14 @@ export default function MessagesPage() {
                   <span>{m.sender_type === "company" ? conversation?.company?.name ?? "企業" : m.sender_intern?.name ?? "不明なユーザー"}</span>
                   <time>{new Date(m.created_at).toLocaleString("ja-JP")}</time>
                 </div>
-                <p>{m.body}</p>
+                {m.body && <p>{m.body}</p>}
+                {m.attachments.length > 0 && (
+                  <div className="teams-attachment-list">
+                    {m.attachments.map((attachment) => (
+                      <AuthenticatedAttachment key={attachment.id} attachment={attachment} token={token} />
+                    ))}
+                  </div>
+                )}
               </div>
             </article>
           ))}
@@ -226,21 +406,60 @@ export default function MessagesPage() {
         </section>
 
         {error && <p className="error-text teams-error">{error}</p>}
+        {pendingFiles.length > 0 && (
+          <div className="teams-pending-attachments">
+            {pendingFiles.map((file, index) => (
+              <span key={`${file.name}-${index}`} className="teams-pending-attachment">
+                <span className="material-symbols-outlined teams-pending-attachment-icon" aria-hidden="true">
+                  attach_file
+                </span>
+                {file.name}
+                <button
+                  type="button"
+                  onClick={() => removePendingFile(index)}
+                  aria-label={`${file.name} を削除`}
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="teams-composer">
           <textarea
             value={body}
             onChange={(e) => setBody(e.target.value)}
+            onKeyDown={handleComposerKeyDown}
+            maxLength={MESSAGE_BODY_MAX_LENGTH}
             placeholder={`${headerTitle} にメッセージを送信`}
-            required
           />
           <div className="teams-composer-actions">
-            <button type="button" className="teams-tool-button" title="添付" aria-label="添付">
-              ＋
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              onChange={handleFileSelect}
+              style={{ display: "none" }}
+            />
+            <button
+              type="button"
+              className="teams-tool-button"
+              title="添付"
+              aria-label="添付"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={pendingFiles.length >= MAX_ATTACHMENTS}
+            >
+              <span className="material-symbols-outlined" aria-hidden="true">
+                attach_file
+              </span>
             </button>
-            <button type="button" className="teams-tool-button" title="書式" aria-label="書式">
-              A
-            </button>
-            <button type="submit" disabled={sending}>
+            <span className="teams-composer-count">
+              {body.length} / {MESSAGE_BODY_MAX_LENGTH}
+            </span>
+            <button
+              type="submit"
+              disabled={sending || body.length > MESSAGE_BODY_MAX_LENGTH || (!body.trim() && pendingFiles.length === 0)}
+            >
               送信
             </button>
           </div>
