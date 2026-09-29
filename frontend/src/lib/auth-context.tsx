@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
-import { AccountType, Intern, Company, fetchMe } from "./api";
+import { AccountType, Intern, Company, fetchMe, ApiError } from "./api";
 
 interface AuthState {
   token: string | null;
@@ -44,9 +44,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .then((res) => {
         setState({ token, accountType: res.account_type, account: res.account, loading: false });
       })
-      .catch(() => {
-        localStorage.removeItem(STORAGE_KEY);
-        setState({ token: null, accountType: null, account: null, loading: false });
+      .catch((err) => {
+        if (localStorage.getItem(STORAGE_KEY) !== token) return;
+
+        if (err instanceof ApiError && [401, 403].includes(err.status)) {
+          localStorage.removeItem(STORAGE_KEY);
+          setState({ token: null, accountType: null, account: null, loading: false });
+          return;
+        }
+
+        setState((s) => (s.token === null || s.token === token ? { token, accountType: null, account: null, loading: false } : s));
       });
   }, []);
 

@@ -4,6 +4,7 @@ class Message < ApplicationRecord
   has_many_attached :attachments
 
   SENDER_TYPES = %w[company intern].freeze
+  BODY_MAX_LENGTH = 3_000
   MAX_ATTACHMENTS = 5
   MAX_ATTACHMENT_SIZE = 10.megabytes
   ALLOWED_ATTACHMENT_TYPES = %w[
@@ -16,6 +17,7 @@ class Message < ApplicationRecord
 
   validates :sender_type, presence: true, inclusion: { in: SENDER_TYPES }
   validates :body, presence: true, unless: -> { attachments.attached? }
+  validates :body, length: { maximum: BODY_MAX_LENGTH }, allow_blank: true
   validates :sender_intern, presence: true, if: -> { sender_type == "intern" }
   validate :sender_intern_must_be_participant
   validate :attachments_within_limits

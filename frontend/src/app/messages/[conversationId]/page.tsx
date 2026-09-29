@@ -46,6 +46,7 @@ function isImageAttachment(contentType: string): boolean {
 }
 
 const MAX_ATTACHMENTS = 5;
+const MESSAGE_BODY_MAX_LENGTH = 3000;
 
 function AuthenticatedAttachment({ attachment, token }: { attachment: MessageAttachment; token: string }) {
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
@@ -189,7 +190,7 @@ export default function MessagesPage() {
   }, [messages]);
 
   const submitMessage = async () => {
-    if (sending || !token || (!body.trim() && pendingFiles.length === 0)) return;
+    if (sending || !token || body.length > MESSAGE_BODY_MAX_LENGTH || (!body.trim() && pendingFiles.length === 0)) return;
     const filesToSend = pendingFiles;
     setSending(true);
     setError(null);
@@ -362,6 +363,7 @@ export default function MessagesPage() {
             value={body}
             onChange={(e) => setBody(e.target.value)}
             onKeyDown={handleComposerKeyDown}
+            maxLength={MESSAGE_BODY_MAX_LENGTH}
             placeholder={`${headerTitle} にメッセージを送信`}
           />
           <div className="teams-composer-actions">
@@ -384,7 +386,13 @@ export default function MessagesPage() {
                 attach_file
               </span>
             </button>
-            <button type="submit" disabled={sending || (!body.trim() && pendingFiles.length === 0)}>
+            <span className="teams-composer-count">
+              {body.length} / {MESSAGE_BODY_MAX_LENGTH}
+            </span>
+            <button
+              type="submit"
+              disabled={sending || body.length > MESSAGE_BODY_MAX_LENGTH || (!body.trim() && pendingFiles.length === 0)}
+            >
               送信
             </button>
           </div>
