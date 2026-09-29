@@ -143,7 +143,7 @@ export function StudentHome({ intern, token }: { intern: Intern; token: string }
             {!loadingAppliedJobPostings && !appliedJobPostingsError && appliedJobPostings.length === 0 && (
               <p className="muted">まだエントリーした募集がありません。</p>
             )}
-            {appliedJobPostings.length > 0 && (
+            {!appliedJobPostingsError && appliedJobPostings.length > 0 && (
               <div className="jobs-grid">
                 {appliedJobPostings.map((job) => (
                   <JobPostingCard key={job.id} job={job} statusLabel="エントリー済み" />
