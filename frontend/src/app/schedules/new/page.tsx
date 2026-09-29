@@ -11,15 +11,46 @@ interface SlotDraft {
   endTime: string;
 }
 
+type ParsedSlot = { starts_at: string; ends_at: string };
+type SlotParseResult = { slot: ParsedSlot | null; error: string | null };
+
 function emptySlot(): SlotDraft {
   return { date: "", startTime: "", endTime: "" };
 }
 
-function slotToIso(slot: SlotDraft): { starts_at: string; ends_at: string } | null {
+function isMatchingLocalDateTime(value: Date, date: string, time: string): boolean {
+  const [year, month, day] = date.split("-").map(Number);
+  const [hour, minute] = time.split(":").map(Number);
+
+  return (
+    value.getFullYear() === year &&
+    value.getMonth() + 1 === month &&
+    value.getDate() === day &&
+    value.getHours() === hour &&
+    value.getMinutes() === minute
+  );
+}
+
+function slotToIso(slot: SlotDraft): SlotParseResult | null {
   if (!slot.date || !slot.startTime || !slot.endTime) return null;
+  const startsAt = new Date(`${slot.date}T${slot.startTime}`);
+  const endsAt = new Date(`${slot.date}T${slot.endTime}`);
+
+  if (
+    Number.isNaN(startsAt.getTime()) ||
+    Number.isNaN(endsAt.getTime()) ||
+    !isMatchingLocalDateTime(startsAt, slot.date, slot.startTime) ||
+    !isMatchingLocalDateTime(endsAt, slot.date, slot.endTime)
+  ) {
+    return { slot: null, error: "候補日時に不正な日付または時刻が含まれています" };
+  }
+
   return {
-    starts_at: new Date(`${slot.date}T${slot.startTime}`).toISOString(),
-    ends_at: new Date(`${slot.date}T${slot.endTime}`).toISOString(),
+    slot: {
+      starts_at: startsAt.toISOString(),
+      ends_at: endsAt.toISOString(),
+    },
+    error: null,
   };
 }
 
@@ -71,7 +102,14 @@ export default function NewSchedulePage() {
     if (!token) return;
     setErrors([]);
 
-    const parsedSlots = slots.map(slotToIso).filter((s): s is { starts_at: string; ends_at: string } => s !== null);
+    const slotResults = slots.map(slotToIso).filter((result): result is SlotParseResult => result !== null);
+    const invalidSlot = slotResults.find((result) => result.error);
+    if (invalidSlot?.error) {
+      setErrors([invalidSlot.error]);
+      return;
+    }
+
+    const parsedSlots = slotResults.map((result) => result.slot).filter((slot): slot is ParsedSlot => slot !== null);
     if (parsedSlots.length === 0) {
       setErrors(["候補日時を1件以上入力してください"]);
       return;
@@ -110,29 +148,53 @@ export default function NewSchedulePage() {
 
         <fieldset className="picker-fieldset">
           <legend>候補日時</legend>
-          {slots.map((slot, index) => (
-            <div key={index} style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.5rem" }}>
-              <input type="date" value={slot.date} onChange={(e) => updateSlot(index, { date: e.target.value })} required />
-              <input
-                type="time"
-                value={slot.startTime}
-                onChange={(e) => updateSlot(index, { startTime: e.target.value })}
-                required
-              />
-              <span>〜</span>
-              <input
-                type="time"
-                value={slot.endTime}
-                onChange={(e) => updateSlot(index, { endTime: e.target.value })}
-                required
-              />
-              {slots.length > 1 && (
-                <button type="button" className="btn-secondary" onClick={() => removeSlot(index)}>
-                  削除
-                </button>
-              )}
-            </div>
-          ))}
+          {slots.map((slot, index) => {
+            const dateId = `schedule-slot-${index}-date`;
+            const startTimeId = `schedule-slot-${index}-start-time`;
+            const endTimeId = `schedule-slot-${index}-end-time`;
+            const candidateLabel = `候補${index + 1}`;
+
+            return (
+              <div key={index} style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.5rem" }}>
+                <label htmlFor={dateId}>
+                  {candidateLabel} 日付
+                  <input
+                    id={dateId}
+                    type="date"
+                    value={slot.date}
+                    onChange={(e) => updateSlot(index, { date: e.target.value })}
+                    required
+                  />
+                </label>
+                <label htmlFor={startTimeId}>
+                  {candidateLabel} 開始時刻
+                  <input
+                    id={startTimeId}
+                    type="time"
+                    value={slot.startTime}
+                    onChange={(e) => updateSlot(index, { startTime: e.target.value })}
+                    required
+                  />
+                </label>
+                <span>〜</span>
+                <label htmlFor={endTimeId}>
+                  {candidateLabel} 終了時刻
+                  <input
+                    id={endTimeId}
+                    type="time"
+                    value={slot.endTime}
+                    onChange={(e) => updateSlot(index, { endTime: e.target.value })}
+                    required
+                  />
+                </label>
+                {slots.length > 1 && (
+                  <button type="button" className="btn-secondary" onClick={() => removeSlot(index)}>
+                    削除
+                  </button>
+                )}
+              </div>
+            );
+          })}
           <button type="button" className="btn-secondary" onClick={addSlot}>
             候補日時を追加
           </button>

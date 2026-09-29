@@ -18,6 +18,7 @@ export function formatSlotDateTime(startsAt: string, endsAt: string): string {
   const start = new Date(startsAt);
   const end = new Date(endsAt);
   const dateFormatter = new Intl.DateTimeFormat("ja-JP", {
+    year: "numeric",
     month: "numeric",
     day: "numeric",
     weekday: "short",

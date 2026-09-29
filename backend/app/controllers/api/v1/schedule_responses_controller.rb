@@ -4,6 +4,7 @@ module Api
       before_action :authenticate_request!
       before_action :set_schedule_slot
       before_action :authorize_participant!
+      before_action :ensure_open_schedule!
 
       # PUT /api/v1/schedules/:schedule_id/slots/:schedule_slot_id/response (intern only)
       def update
@@ -30,6 +31,12 @@ module Api
         return if current_account.is_a?(Intern) && @schedule.interns.exists?(id: current_account.id)
 
         render_unauthorized
+      end
+
+      def ensure_open_schedule!
+        return if @schedule.open?
+
+        render json: { error: "openの日程のみ回答できます" }, status: :unprocessable_entity
       end
     end
   end

@@ -25,7 +25,16 @@ class Schedule < ApplicationRecord
     joins(:schedule_participants).where(schedule_participants: { intern_id: intern_id }).distinct
   }
 
+  def open?
+    status == "open"
+  end
+
   def confirm!(slot)
+    unless open?
+      errors.add(:status, "がopenの日程のみ変更できます")
+      raise ActiveRecord::RecordInvalid, self
+    end
+
     raise ArgumentError, "slot does not belong to this schedule" unless schedule_slots.exists?(id: slot.id)
 
     update!(status: "confirmed", confirmed_slot: slot)

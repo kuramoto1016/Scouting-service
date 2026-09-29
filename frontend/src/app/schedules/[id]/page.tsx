@@ -39,8 +39,8 @@ export default function ScheduleDetailPage() {
   }, [loading, token, router]);
 
   const loadSchedule = useCallback(() => {
-    if (!token) return;
-    fetchSchedule(token, scheduleId)
+    if (!token) return Promise.resolve();
+    return fetchSchedule(token, scheduleId)
       .then(setSchedule)
       .catch(() => setError("予定調整の取得に失敗しました"))
       .finally(() => setLoadingSchedule(false));
@@ -84,7 +84,7 @@ export default function ScheduleDetailPage() {
     setError(null);
     try {
       await respondToScheduleSlot(token, scheduleId, slotId, answer);
-      loadSchedule();
+      await loadSchedule();
     } catch (err) {
       setError(err instanceof ApiError ? err.errors.join(", ") : "回答の送信に失敗しました");
     } finally {

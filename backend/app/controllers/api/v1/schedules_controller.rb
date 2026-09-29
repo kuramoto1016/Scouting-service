@@ -5,6 +5,7 @@ module Api
       before_action :set_schedule, only: %i[show confirm cancel]
       before_action :authorize_participant!, only: %i[show]
       before_action :authorize_company_owner!, only: %i[confirm cancel]
+      before_action :ensure_open_schedule!, only: %i[confirm cancel]
 
       # GET /api/v1/schedules
       def index
@@ -73,6 +74,12 @@ module Api
 
       def authorize_company_owner!
         render_unauthorized unless current_account.is_a?(Company) && @schedule.company_id == current_account.id
+      end
+
+      def ensure_open_schedule!
+        return if @schedule.open?
+
+        render json: { error: "openの日程のみ変更できます" }, status: :unprocessable_entity
       end
 
       def schedule_json(schedule, include_responses: false)
