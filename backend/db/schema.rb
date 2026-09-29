@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_29_090403) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_29_100004) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -128,6 +128,48 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_090403) do
     t.index ["student_profile_id"], name: "index_portfolio_items_on_student_profile_id"
   end
 
+  create_table "schedule_participants", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "intern_id", null: false
+    t.bigint "schedule_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["intern_id"], name: "index_schedule_participants_on_intern_id"
+    t.index ["schedule_id", "intern_id"], name: "index_schedule_participants_on_schedule_and_intern", unique: true
+    t.index ["schedule_id"], name: "index_schedule_participants_on_schedule_id"
+  end
+
+  create_table "schedule_responses", force: :cascade do |t|
+    t.string "answer", null: false
+    t.datetime "created_at", null: false
+    t.bigint "intern_id", null: false
+    t.bigint "schedule_slot_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["intern_id"], name: "index_schedule_responses_on_intern_id"
+    t.index ["schedule_slot_id", "intern_id"], name: "index_schedule_responses_on_slot_and_intern", unique: true
+    t.index ["schedule_slot_id"], name: "index_schedule_responses_on_schedule_slot_id"
+  end
+
+  create_table "schedule_slots", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "ends_at", null: false
+    t.bigint "schedule_id", null: false
+    t.datetime "starts_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["schedule_id"], name: "index_schedule_slots_on_schedule_id"
+  end
+
+  create_table "schedules", force: :cascade do |t|
+    t.bigint "company_id", null: false
+    t.bigint "confirmed_slot_id"
+    t.datetime "created_at", null: false
+    t.string "status", default: "open", null: false
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id"], name: "index_schedules_on_company_id"
+    t.index ["confirmed_slot_id"], name: "index_schedules_on_confirmed_slot_id"
+    t.index ["status"], name: "index_schedules_on_status"
+  end
+
   create_table "student_desired_roles", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "job_category", null: false
@@ -186,6 +228,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_090403) do
   add_foreign_key "messages", "conversations"
   add_foreign_key "messages", "interns", column: "sender_intern_id"
   add_foreign_key "portfolio_items", "student_profiles"
+  add_foreign_key "schedule_participants", "interns"
+  add_foreign_key "schedule_participants", "schedules"
+  add_foreign_key "schedule_responses", "interns"
+  add_foreign_key "schedule_responses", "schedule_slots"
+  add_foreign_key "schedule_slots", "schedules"
+  add_foreign_key "schedules", "companies"
+  add_foreign_key "schedules", "schedule_slots", column: "confirmed_slot_id"
   add_foreign_key "student_desired_roles", "student_profiles"
   add_foreign_key "student_highlights", "student_profiles"
   add_foreign_key "student_profiles", "interns"

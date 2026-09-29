@@ -3,6 +3,7 @@ class Company < ApplicationRecord
 
   has_many :conversations, dependent: :destroy
   has_many :job_postings, dependent: :destroy
+  has_many :schedules, dependent: :destroy
 
   EMAIL_REGEXP = /\A[^@\s]+@[^@\s]+\z/
 

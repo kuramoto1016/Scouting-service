@@ -521,3 +521,80 @@ export function createJobPosting(token: string, params: JobPostingInput) {
     body: JSON.stringify({ job_posting: params }),
   });
 }
+
+export type ScheduleStatus = "open" | "confirmed" | "cancelled";
+export type ScheduleAnswer = "available" | "unavailable" | "maybe";
+
+export interface ScheduleSlotResponse {
+  intern_id: number;
+  answer: ScheduleAnswer;
+}
+
+export interface ScheduleSlot {
+  id: number;
+  starts_at: string;
+  ends_at: string;
+  responses?: ScheduleSlotResponse[];
+}
+
+export interface Schedule {
+  id: number;
+  title: string;
+  status: ScheduleStatus;
+  company: { id: number; name: string };
+  interns: { id: number; name: string }[];
+  confirmed_slot_id: number | null;
+  slots: ScheduleSlot[];
+}
+
+export function fetchSchedules(token: string) {
+  return request<Schedule[]>("/api/v1/schedules", { token });
+}
+
+export function fetchSchedule(token: string, scheduleId: number) {
+  return request<Schedule>(`/api/v1/schedules/${scheduleId}`, { token });
+}
+
+export interface ScheduleSlotInput {
+  starts_at: string;
+  ends_at: string;
+}
+
+export function createSchedule(
+  token: string,
+  params: { title: string; internIds: number[]; slots: ScheduleSlotInput[] }
+) {
+  return request<Schedule>("/api/v1/schedules", {
+    method: "POST",
+    token,
+    body: JSON.stringify({ title: params.title, intern_ids: params.internIds, slots: params.slots }),
+  });
+}
+
+export function confirmSchedule(token: string, scheduleId: number, scheduleSlotId: number) {
+  return request<Schedule>(`/api/v1/schedules/${scheduleId}/confirm`, {
+    method: "PATCH",
+    token,
+    body: JSON.stringify({ schedule_slot_id: scheduleSlotId }),
+  });
+}
+
+export function cancelSchedule(token: string, scheduleId: number) {
+  return request<Schedule>(`/api/v1/schedules/${scheduleId}/cancel`, {
+    method: "PATCH",
+    token,
+  });
+}
+
+export function respondToScheduleSlot(
+  token: string,
+  scheduleId: number,
+  scheduleSlotId: number,
+  answer: ScheduleAnswer
+) {
+  return request<ScheduleSlotResponse>(`/api/v1/schedules/${scheduleId}/slots/${scheduleSlotId}/response`, {
+    method: "PATCH",
+    token,
+    body: JSON.stringify({ answer }),
+  });
+}

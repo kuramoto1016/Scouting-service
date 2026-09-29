@@ -1490,6 +1490,11 @@ button[type="submit"]:disabled {
   background: var(--surface);
 }
 
+.schedule-slot-confirmed {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
 .skill-category-tabs {
   display: flex;
   gap: 0.5rem;

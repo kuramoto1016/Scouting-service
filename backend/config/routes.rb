@@ -26,6 +26,14 @@ Rails.application.routes.draw do
           resources :attachments, only: %i[show], controller: :message_attachments
         end
       end
+
+      resources :schedules, only: %i[index show create] do
+        member do
+          patch :confirm
+          patch :cancel
+        end
+        patch "slots/:schedule_slot_id/response", to: "schedule_responses#update"
+      end
     end
   end
 end
