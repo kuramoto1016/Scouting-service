@@ -41,13 +41,21 @@ function SectionHeader({
 }
 
 function EmptySection({ editable, editHref }: { editable: boolean; editHref?: string }) {
+  if (!editable) {
+    return (
+      <div className="profile-section-empty">
+        <p className="muted">未登録</p>
+      </div>
+    );
+  }
+
   return (
     <div className="profile-section-empty">
       <p className="muted">未登録</p>
       <p className="muted" style={{ fontSize: "0.8rem" }}>
         追加すると企業の目に留まりやすくなります。
       </p>
-      {editable && editHref && (
+      {editHref && (
         <Link href={editHref} className="btn-secondary" style={{ marginTop: "0.5rem" }}>
           追加する
         </Link>
