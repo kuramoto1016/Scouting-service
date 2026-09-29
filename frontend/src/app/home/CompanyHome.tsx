@@ -37,10 +37,10 @@ export function CompanyHome({ company, token }: { company: Company; token: strin
 
   useEffect(() => {
     let cancelled = false;
-    fetchJobPostings({ companyId: company.id })
+    fetchJobPostings({ companyId: company.id, limit: MAX_JOB_POSTINGS })
       .then((res) => {
         if (cancelled) return;
-        setJobPostings(res.job_postings.slice(0, MAX_JOB_POSTINGS));
+        setJobPostings(res.job_postings);
         setTotalJobPostingCount(res.total_count);
       })
       .catch(() => {
@@ -78,7 +78,7 @@ export function CompanyHome({ company, token }: { company: Company; token: strin
       <section className="profile-section">
         <div className="profile-section-header">
           <h2 className="profile-section-title">自社の求人（{totalJobPostingCount}件）</h2>
-          <Link href="/jobs" className="profile-section-edit">
+          <Link href={`/jobs?company_id=${company.id}`} className="profile-section-edit">
             すべて見る
           </Link>
         </div>

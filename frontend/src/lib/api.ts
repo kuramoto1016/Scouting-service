@@ -142,6 +142,7 @@ export interface JobPostingSearchParams {
   jobSubcategory?: string;
   location?: string;
   companyId?: number;
+  limit?: number;
 }
 
 export interface JobPostingListResponse {
@@ -476,6 +477,7 @@ export function fetchJobPostings(search: JobPostingSearchParams = {}) {
   if (search.jobSubcategory) query.set("job_subcategory", search.jobSubcategory);
   if (search.location) query.set("location", search.location);
   if (search.companyId) query.set("company_id", String(search.companyId));
+  if (search.limit) query.set("limit", String(search.limit));
 
   const qs = query.toString();
   return request<JobPostingListResponse>(`/api/v1/job_postings${qs ? `?${qs}` : ""}`);

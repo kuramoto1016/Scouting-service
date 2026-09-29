@@ -13,10 +13,10 @@ export default function HomePage() {
 
   useEffect(() => {
     if (loading) return;
-    if (!token) {
+    if (!token || !account) {
       router.push("/login");
     }
-  }, [loading, token, router]);
+  }, [loading, token, account, router]);
 
   if (loading || !token || !account) return null;
 

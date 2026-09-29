@@ -45,10 +45,10 @@ export function StudentHome({ intern, token }: { intern: Intern; token: string }
 
   useEffect(() => {
     let cancelled = false;
-    fetchJobPostings()
+    fetchJobPostings({ limit: MAX_JOB_POSTINGS })
       .then((res) => {
         if (cancelled) return;
-        setJobPostings(res.job_postings.slice(0, MAX_JOB_POSTINGS));
+        setJobPostings(res.job_postings);
       })
       .catch(() => {
         if (cancelled) return;

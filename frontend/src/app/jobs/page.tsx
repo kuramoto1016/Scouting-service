@@ -25,13 +25,17 @@ function valuesFromSearchParams(params: URLSearchParams): JobPostingFilterValues
   };
 }
 
-function buildQueryString(values: JobPostingFilterValues): string {
+// company_id represents where the visitor came from (e.g. a company's own
+// dashboard) rather than a filter the user picks in the UI, so it is kept
+// separate from JobPostingFilterValues but still carried through the URL.
+function buildQueryString(values: JobPostingFilterValues, companyId: string | null): string {
   const params = new URLSearchParams();
   if (values.graduationYear) params.set("graduation_year", values.graduationYear);
   if (values.workStyle) params.set("work_style", values.workStyle);
   if (values.jobCategory) params.set("job_category", values.jobCategory);
   if (values.jobSubcategory) params.set("job_subcategory", values.jobSubcategory);
   if (values.location) params.set("location", values.location);
+  if (companyId) params.set("company_id", companyId);
   return params.toString();
 }
 
@@ -48,6 +52,7 @@ function JobsPageContent() {
   const searchParams = useSearchParams();
 
   const filterValues = useMemo(() => valuesFromSearchParams(searchParams), [searchParams]);
+  const companyId = searchParams.get("company_id");
 
   const [jobs, setJobs] = useState<JobPosting[]>([]);
   const [fetchedGraduationYearOptions, setFetchedGraduationYearOptions] = useState<number[]>([]);
@@ -70,10 +75,10 @@ function JobsPageContent() {
 
   const replaceFilters = useCallback(
     (next: JobPostingFilterValues) => {
-      const qs = buildQueryString(next);
+      const qs = buildQueryString(next, companyId);
       router.replace(qs ? `/jobs?${qs}` : "/jobs");
     },
-    [router]
+    [router, companyId]
   );
 
   const handleFilterChange = useCallback(
@@ -90,8 +95,9 @@ function JobsPageContent() {
 
   const handleReset = useCallback(() => {
     setLocalLocationDraft(null);
-    router.replace("/jobs");
-  }, [router]);
+    const qs = companyId ? new URLSearchParams({ company_id: companyId }).toString() : "";
+    router.replace(qs ? `/jobs?${qs}` : "/jobs");
+  }, [router, companyId]);
 
   useEffect(() => {
     if (localLocationDraft === null || localLocationDraft === filterValues.location) return;
@@ -108,7 +114,7 @@ function JobsPageContent() {
   useEffect(() => {
     let cancelled = false;
 
-    fetchJobPostings()
+    fetchJobPostings({ companyId: companyId ? Number(companyId) : undefined })
       .then((res) => {
         if (cancelled) return;
         setFetchedGraduationYearOptions(graduationYearsFromJobs(res.job_postings));
@@ -121,7 +127,7 @@ function JobsPageContent() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [companyId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -133,6 +139,7 @@ function JobsPageContent() {
       jobCategory: filterValues.jobCategory || undefined,
       jobSubcategory: filterValues.jobSubcategory || undefined,
       location: filterValues.location || undefined,
+      companyId: companyId ? Number(companyId) : undefined,
     })
       .then((res) => {
         if (cancelled) return;
@@ -154,7 +161,7 @@ function JobsPageContent() {
     return () => {
       cancelled = true;
     };
-  }, [filterValues]);
+  }, [filterValues, companyId]);
 
   return (
     <div>
