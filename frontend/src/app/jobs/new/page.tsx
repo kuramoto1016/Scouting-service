@@ -4,7 +4,7 @@ import { useEffect, useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { createJobPosting, ApiError, WorkStyle } from "@/lib/api";
-import { WORK_STYLE_LABELS, WORK_STYLE_OPTIONS } from "@/lib/job-posting-labels";
+import { WORK_STYLE_LABELS, WORK_STYLE_OPTIONS, upcomingGraduationYears } from "@/lib/job-posting-labels";
 import {
   JOB_TAXONOMY,
   JobCategoryKey,
@@ -31,6 +31,7 @@ export default function NewJobPage() {
   const [errors, setErrors] = useState<string[]>([]);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [submitting, setSubmitting] = useState(false);
+  const graduationYearOptions = upcomingGraduationYears();
 
   useEffect(() => {
     if (loading) return;
@@ -98,12 +99,14 @@ export default function NewJobPage() {
         </label>
         <label>
           対象卒業年度
-          <input
-            type="number"
-            value={graduationYear}
-            onChange={(e) => setGraduationYear(e.target.value)}
-            placeholder="例: 2028"
-          />
+          <select value={graduationYear} onChange={(e) => setGraduationYear(e.target.value)}>
+            <option value="">指定なし</option>
+            {graduationYearOptions.map((year) => (
+              <option key={year} value={year}>
+                {year}年卒
+              </option>
+            ))}
+          </select>
         </label>
         <label>
           募集開始日

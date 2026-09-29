@@ -29,6 +29,11 @@ export const JOB_CATEGORY_ICONS: Record<JobCategoryKey, string> = {
 
 export const JOB_CATEGORY_OPTIONS: JobCategoryKey[] = JOB_CATEGORY_KEYS;
 
+export function upcomingGraduationYears(count = 3, baseDate = new Date()): number[] {
+  const firstYear = baseDate.getFullYear() + 1;
+  return Array.from({ length: count }, (_, index) => firstYear + index);
+}
+
 function isJobCategoryKey(value: string): value is JobCategoryKey {
   return (JOB_CATEGORY_KEYS as string[]).includes(value);
 }

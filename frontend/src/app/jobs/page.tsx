@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { fetchJobPostings, JobPosting, WorkStyle } from "@/lib/api";
 import { JobPostingCard, JobPostingCardSkeleton } from "@/components/JobPostingCard";
 import { JobPostingFilters, JobPostingFilterValues } from "@/components/JobPostingFilters";
+import { upcomingGraduationYears } from "@/lib/job-posting-labels";
 
 const SKELETON_COUNT = 6;
 
@@ -52,10 +53,9 @@ function JobsPageContent() {
   const [fetchedGraduationYearOptions, setFetchedGraduationYearOptions] = useState<number[]>([]);
   const graduationYearOptions = useMemo(() => {
     const selectedYear = filterValues.graduationYear ? Number(filterValues.graduationYear) : null;
-    if (selectedYear === null || fetchedGraduationYearOptions.includes(selectedYear)) {
-      return fetchedGraduationYearOptions;
-    }
-    return [...fetchedGraduationYearOptions, selectedYear].sort((a, b) => a - b);
+    const years = new Set([...upcomingGraduationYears(), ...fetchedGraduationYearOptions]);
+    if (selectedYear !== null) years.add(selectedYear);
+    return Array.from(years).sort((a, b) => a - b);
   }, [fetchedGraduationYearOptions, filterValues.graduationYear]);
   const [totalCount, setTotalCount] = useState(0);
   const [loadingJobs, setLoadingJobs] = useState(true);
