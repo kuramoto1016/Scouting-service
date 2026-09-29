@@ -50,27 +50,65 @@ const MESSAGE_BODY_MAX_LENGTH = 3000;
 
 function AuthenticatedAttachment({ attachment, token }: { attachment: MessageAttachment; token: string }) {
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
+  const imageLinkRef = useRef<HTMLAnchorElement>(null);
+  const objectUrlRef = useRef<string | null>(null);
   const isImage = isImageAttachment(attachment.content_type);
 
   useEffect(() => {
     if (!isImage) return;
+    const element = imageLinkRef.current;
+    if (!element) return;
 
-    let ignore = false;
-    let nextObjectUrl: string | null = null;
+    let disposed = false;
+    let loading = false;
 
-    fetchAttachmentBlob(token, attachment.url)
-      .then((blob) => {
-        if (ignore) return;
-        nextObjectUrl = URL.createObjectURL(blob);
-        setObjectUrl(nextObjectUrl);
-      })
-      .catch(() => {
-        if (!ignore) setObjectUrl(null);
-      });
+    const releaseObjectUrl = (updateState: boolean) => {
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current);
+        objectUrlRef.current = null;
+      }
+      if (updateState) setObjectUrl(null);
+    };
+
+    const loadObjectUrl = () => {
+      if (loading || objectUrlRef.current) return;
+      loading = true;
+
+      fetchAttachmentBlob(token, attachment.url)
+        .then((blob) => {
+          const nextObjectUrl = URL.createObjectURL(blob);
+          if (disposed) {
+            URL.revokeObjectURL(nextObjectUrl);
+            return;
+          }
+          objectUrlRef.current = nextObjectUrl;
+          setObjectUrl(nextObjectUrl);
+        })
+        .catch(() => {
+          if (!disposed) setObjectUrl(null);
+        })
+        .finally(() => {
+          loading = false;
+        });
+    };
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          loadObjectUrl();
+        } else {
+          releaseObjectUrl(true);
+        }
+      },
+      { rootMargin: "120px" }
+    );
+
+    observer.observe(element);
 
     return () => {
-      ignore = true;
-      if (nextObjectUrl) URL.revokeObjectURL(nextObjectUrl);
+      disposed = true;
+      observer.disconnect();
+      releaseObjectUrl(false);
     };
   }, [attachment.url, isImage, token]);
 
@@ -78,12 +116,18 @@ function AuthenticatedAttachment({ attachment, token }: { attachment: MessageAtt
     if (objectUrl) return;
 
     event.preventDefault();
+    const attachmentWindow = window.open("about:blank", "_blank");
+    if (attachmentWindow) attachmentWindow.opener = null;
+
     try {
       const blob = await fetchAttachmentBlob(token, attachment.url);
       const nextObjectUrl = URL.createObjectURL(blob);
-      window.open(nextObjectUrl, "_blank", "noopener,noreferrer");
+      if (attachmentWindow) {
+        attachmentWindow.location.href = nextObjectUrl;
+      }
       window.setTimeout(() => URL.revokeObjectURL(nextObjectUrl), 60_000);
     } catch {
+      attachmentWindow?.close();
       // The message list error banner is reserved for list/send failures.
     }
   };
@@ -91,6 +135,7 @@ function AuthenticatedAttachment({ attachment, token }: { attachment: MessageAtt
   if (isImage) {
     return (
       <a
+        ref={imageLinkRef}
         href={objectUrl ?? attachment.url}
         target="_blank"
         rel="noopener noreferrer"

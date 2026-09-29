@@ -22,9 +22,15 @@ class Message < ApplicationRecord
   validate :sender_intern_must_be_participant
   validate :attachments_within_limits
 
+  before_validation :normalize_body
+
   scope :ordered, -> { order(:created_at) }
 
   private
+
+  def normalize_body
+    self.body = "" if body.nil?
+  end
 
   def sender_intern_must_be_participant
     return unless sender_type == "intern" && sender_intern && conversation
