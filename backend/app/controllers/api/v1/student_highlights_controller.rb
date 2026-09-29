@@ -32,6 +32,12 @@ module Api
       # PATCH /api/v1/interns/:intern_id/student_highlights/reorder
       def reorder
         ids = Array(params[:ordered_ids]).map(&:to_i)
+        existing_ids = @profile.student_highlights.pluck(:id)
+
+        if ids.uniq.length != ids.length || ids.sort != existing_ids.sort
+          return render json: { error: "並び順の指定が不正です" }, status: :unprocessable_entity
+        end
+
         ActiveRecord::Base.transaction do
           ids.each_with_index do |id, index|
             @profile.student_highlights.where(id: id).update_all(position: index + 1)

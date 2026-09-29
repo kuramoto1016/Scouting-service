@@ -47,6 +47,8 @@ export default function InternsListPage() {
       .then((data) => {
         if (cancelled) return;
         setInterns(data);
+        const visibleIds = new Set(data.map((intern) => intern.id));
+        setSelectedIds((prev) => prev.filter((id) => visibleIds.has(id)));
       })
       .catch(() => {
         if (cancelled) return;

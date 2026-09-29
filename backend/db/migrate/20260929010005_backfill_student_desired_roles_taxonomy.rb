@@ -48,10 +48,14 @@ class BackfillStudentDesiredRolesTaxonomy < ActiveRecord::Migration[8.1]
     end
   end
 
-  # Only rows whose (job_category, job_subcategory) matches a value in
-  # LEGACY_TEXT_TO_TAXONOMY can be restored to their original free-text label;
-  # rows backfilled via the FALLBACK_* constants above have no recoverable
-  # original text and are left with a NULL role on rollback.
+  # IMPORTANT: this rollback is lossy for any row that went through the
+  # FALLBACK_* path in `up`. The original free-text `role` for those rows is
+  # never persisted anywhere (only the derived job_category/job_subcategory
+  # pair is), so there is no data left to reconstruct it from. Only rows whose
+  # (job_category, job_subcategory) matches a value in LEGACY_TEXT_TO_TAXONOMY
+  # can be restored to their original label; all other rows are left with a
+  # NULL role. This migration set targets local prototype/seed data only, so
+  # rolling back is not expected in a real environment with user-entered data.
   def down
     reverse_map = LEGACY_TEXT_TO_TAXONOMY.each_with_object({}) { |(text, pair), acc| acc[pair] = text }
 
