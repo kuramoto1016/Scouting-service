@@ -444,6 +444,20 @@ export function fetchMessages(token: string, conversationId: number) {
   return request<Message[]>(`/api/v1/conversations/${conversationId}/messages`, { token });
 }
 
+export async function fetchAttachmentBlob(token: string, url: string) {
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    const errors: string[] = data.errors ?? (data.error ? [data.error] : ["エラーが発生しました"]);
+    throw new ApiError(res.status, errors, data.field_errors ?? {});
+  }
+
+  return res.blob();
+}
+
 export function sendMessage(
   token: string,
   conversationId: number,

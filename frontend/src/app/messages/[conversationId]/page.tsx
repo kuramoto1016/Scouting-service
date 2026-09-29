@@ -1,16 +1,19 @@
 "use client";
 
 import { useEffect, useState, FormEvent, ChangeEvent, useRef, useCallback } from "react";
+import type { KeyboardEvent, MouseEvent } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import {
   fetchConversation,
   fetchConversations,
+  fetchAttachmentBlob,
   fetchMessages,
   sendMessage,
   Conversation,
   Message,
+  MessageAttachment,
   ApiError,
 } from "@/lib/api";
 
@@ -43,6 +46,78 @@ function isImageAttachment(contentType: string): boolean {
 }
 
 const MAX_ATTACHMENTS = 5;
+
+function AuthenticatedAttachment({ attachment, token }: { attachment: MessageAttachment; token: string }) {
+  const [objectUrl, setObjectUrl] = useState<string | null>(null);
+  const isImage = isImageAttachment(attachment.content_type);
+
+  useEffect(() => {
+    if (!isImage) return;
+
+    let ignore = false;
+    let nextObjectUrl: string | null = null;
+
+    fetchAttachmentBlob(token, attachment.url)
+      .then((blob) => {
+        if (ignore) return;
+        nextObjectUrl = URL.createObjectURL(blob);
+        setObjectUrl(nextObjectUrl);
+      })
+      .catch(() => {
+        if (!ignore) setObjectUrl(null);
+      });
+
+    return () => {
+      ignore = true;
+      if (nextObjectUrl) URL.revokeObjectURL(nextObjectUrl);
+    };
+  }, [attachment.url, isImage, token]);
+
+  const openAttachment = async (event: MouseEvent<HTMLAnchorElement>) => {
+    if (objectUrl) return;
+
+    event.preventDefault();
+    try {
+      const blob = await fetchAttachmentBlob(token, attachment.url);
+      const nextObjectUrl = URL.createObjectURL(blob);
+      window.open(nextObjectUrl, "_blank", "noopener,noreferrer");
+      window.setTimeout(() => URL.revokeObjectURL(nextObjectUrl), 60_000);
+    } catch {
+      // The message list error banner is reserved for list/send failures.
+    }
+  };
+
+  if (isImage) {
+    return (
+      <a
+        href={objectUrl ?? attachment.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="teams-attachment-image-link"
+        onClick={openAttachment}
+      >
+        {objectUrl && (
+          // eslint-disable-next-line @next/next/no-img-element -- authenticated user upload rendered from a blob URL
+          <img src={objectUrl} alt={attachment.filename} className="teams-attachment-image" />
+        )}
+      </a>
+    );
+  }
+
+  return (
+    <a
+      href={attachment.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="teams-attachment-file"
+      onClick={openAttachment}
+    >
+      <span className="material-symbols-outlined teams-attachment-icon">attach_file</span>
+      <span className="teams-attachment-name">{attachment.filename}</span>
+      <span className="teams-attachment-size">{formatByteSize(attachment.byte_size)}</span>
+    </a>
+  );
+}
 
 export default function MessagesPage() {
   const params = useParams<{ conversationId: string }>();
@@ -113,22 +188,34 @@ export default function MessagesPage() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!token || (!body.trim() && pendingFiles.length === 0)) return;
+  const submitMessage = async () => {
+    if (sending || !token || (!body.trim() && pendingFiles.length === 0)) return;
+    const filesToSend = pendingFiles;
     setSending(true);
     setError(null);
     try {
-      const msg = await sendMessage(token, conversationId, body.trim(), pendingFiles);
+      const msg = await sendMessage(token, conversationId, body.trim(), filesToSend);
       setMessages((prev) => [...prev, msg]);
       setBody("");
-      setPendingFiles([]);
+      setPendingFiles((prev) => prev.filter((file) => !filesToSend.includes(file)));
       loadConversations();
     } catch (err) {
       setError(err instanceof ApiError ? err.errors.join(", ") : "送信に失敗しました");
     } finally {
       setSending(false);
     }
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    await submitMessage();
+  };
+
+  const handleComposerKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key !== "Enter" || e.shiftKey || e.nativeEvent.isComposing) return;
+
+    e.preventDefault();
+    void submitMessage();
   };
 
   const handleFileSelect = (e: ChangeEvent<HTMLInputElement>) => {
@@ -238,32 +325,9 @@ export default function MessagesPage() {
                 {m.body && <p>{m.body}</p>}
                 {m.attachments.length > 0 && (
                   <div className="teams-attachment-list">
-                    {m.attachments.map((attachment) =>
-                      isImageAttachment(attachment.content_type) ? (
-                        <a
-                          key={attachment.id}
-                          href={attachment.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="teams-attachment-image-link"
-                        >
-                          {/* eslint-disable-next-line @next/next/no-img-element -- external, dynamically-sized user upload; next/image adds no benefit here */}
-                          <img src={attachment.url} alt={attachment.filename} className="teams-attachment-image" />
-                        </a>
-                      ) : (
-                        <a
-                          key={attachment.id}
-                          href={attachment.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="teams-attachment-file"
-                        >
-                          <span className="material-symbols-outlined teams-attachment-icon">attach_file</span>
-                          <span className="teams-attachment-name">{attachment.filename}</span>
-                          <span className="teams-attachment-size">{formatByteSize(attachment.byte_size)}</span>
-                        </a>
-                      )
-                    )}
+                    {m.attachments.map((attachment) => (
+                      <AuthenticatedAttachment key={attachment.id} attachment={attachment} token={token} />
+                    ))}
                   </div>
                 )}
               </div>
@@ -297,6 +361,7 @@ export default function MessagesPage() {
           <textarea
             value={body}
             onChange={(e) => setBody(e.target.value)}
+            onKeyDown={handleComposerKeyDown}
             placeholder={`${headerTitle} にメッセージを送信`}
           />
           <div className="teams-composer-actions">

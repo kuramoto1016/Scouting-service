@@ -54,17 +54,17 @@ module Api
           sender_intern: message.sender_intern && { id: message.sender_intern.id, name: message.sender_intern.name },
           body: message.body,
           created_at: message.created_at,
-          attachments: message.attachments.map { |a| attachment_json(a) }
+          attachments: message.attachments.map { |a| attachment_json(message, a) }
         }
       end
 
-      def attachment_json(attachment)
+      def attachment_json(message, attachment)
         {
           id: attachment.id,
           filename: attachment.filename.to_s,
           content_type: attachment.content_type,
           byte_size: attachment.byte_size,
-          url: url_for(attachment)
+          url: api_v1_conversation_message_attachment_url(message.conversation_id, message.id, attachment.id)
         }
       end
     end
