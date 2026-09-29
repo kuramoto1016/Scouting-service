@@ -15,6 +15,7 @@
   --surface-muted: #eef1f5;
   --muted: #55677a;
   --danger: #c8342a;
+  --success: #0f766e;
 }
 
 html {
@@ -1117,6 +1118,19 @@ button[type="submit"]:disabled {
   top: 0.6rem;
   right: 0.6rem;
   background: var(--danger);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: bold;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  z-index: 1;
+}
+
+.job-card-status {
+  position: absolute;
+  top: 0.6rem;
+  left: 0.6rem;
+  background: var(--success);
   color: white;
   font-size: 0.7rem;
   font-weight: bold;

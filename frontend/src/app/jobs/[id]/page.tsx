@@ -17,6 +17,7 @@ export default function JobDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [applyMessage, setApplyMessage] = useState<string | null>(null);
+  const [hasApplied, setHasApplied] = useState(false);
   const [applying, setApplying] = useState(false);
 
   useEffect(() => {
@@ -50,11 +51,17 @@ export default function JobDetailPage() {
 
   const handleApply = async () => {
     if (!token) return;
+    if (hasApplied) {
+      setApplyMessage("この求人はエントリー済みです。");
+      return;
+    }
+
     setApplying(true);
     setApplyMessage(null);
     try {
-      await applyToJobPosting(token, job.id);
-      setApplyMessage("この求人にエントリーしました。");
+      const application = await applyToJobPosting(token, job.id);
+      setHasApplied(true);
+      setApplyMessage(application.already_applied ? "この求人はエントリー済みです。" : "この求人にエントリーしました。");
     } catch (err) {
       setApplyMessage(err instanceof ApiError ? err.errors.join(", ") : "エントリーに失敗しました");
     } finally {
@@ -106,7 +113,7 @@ export default function JobDetailPage() {
         <div style={{ marginTop: "1rem" }}>
           {accountType === "intern" && (
             <button type="button" className="btn-primary" onClick={handleApply} disabled={applying}>
-              エントリーする
+              {hasApplied ? "エントリー済み" : "エントリーする"}
             </button>
           )}
           {isOwnerCompany && (

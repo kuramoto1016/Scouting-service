@@ -9,6 +9,7 @@ Rails.application.routes.draw do
       post "auth/intern_signup", to: "intern_registrations#create"
       post "auth/company_signup", to: "company_registrations#create"
       get "me", to: "me#show"
+      get "job_applications", to: "job_applications#mine"
 
       resources :interns, only: %i[index show] do
         patch "student_profile/:section", to: "student_profiles#update", as: :student_profile_section

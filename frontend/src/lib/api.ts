@@ -157,6 +157,7 @@ export interface JobApplication {
   job_posting_id: number;
   intern_id: number;
   created_at: string;
+  already_applied?: boolean;
 }
 
 export class ApiError extends Error {
@@ -562,6 +563,14 @@ export function applyToJobPosting(token: string, jobPostingId: number) {
 
 export function fetchJobPostingApplicants(token: string, jobPostingId: number) {
   return request<Intern[]>(`/api/v1/job_postings/${jobPostingId}/applications`, { token });
+}
+
+export function fetchAppliedJobPostings(token: string, limit?: number) {
+  const query = new URLSearchParams();
+  if (limit) query.set("limit", String(limit));
+
+  const qs = query.toString();
+  return request<JobPostingListResponse>(`/api/v1/job_applications${qs ? `?${qs}` : ""}`, { token });
 }
 
 export interface JobPostingInput {
