@@ -2,7 +2,15 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Intern, Conversation, JobPosting, fetchConversations, fetchJobPostings } from "@/lib/api";
+import {
+  Intern,
+  Conversation,
+  JobPosting,
+  ApiError,
+  fetchAppliedJobPostings,
+  fetchConversations,
+  fetchJobPostings,
+} from "@/lib/api";
 import { ProfileSidebar } from "@/components/ProfileSidebar";
 import { JobPostingCard } from "@/components/JobPostingCard";
 import { SECTION_LABELS } from "@/lib/profile-labels";
@@ -19,8 +27,11 @@ function editSectionPathFor(section: Intern["missing_sections"][number]): string
 export function StudentHome({ intern, token }: { intern: Intern; token: string }) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [jobPostings, setJobPostings] = useState<JobPosting[]>([]);
+  const [appliedJobPostings, setAppliedJobPostings] = useState<JobPosting[]>([]);
   const [loadingConversations, setLoadingConversations] = useState(true);
   const [loadingJobPostings, setLoadingJobPostings] = useState(true);
+  const [loadingAppliedJobPostings, setLoadingAppliedJobPostings] = useState(true);
+  const [appliedJobPostingsError, setAppliedJobPostingsError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -64,6 +75,30 @@ export function StudentHome({ intern, token }: { intern: Intern; token: string }
     };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    fetchAppliedJobPostings(token, MAX_JOB_POSTINGS)
+      .then((res) => {
+        if (cancelled) return;
+        setAppliedJobPostings(res.job_postings);
+        setAppliedJobPostingsError(null);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setAppliedJobPostingsError(
+          err instanceof ApiError ? err.errors.join(", ") : "エントリー済み募集の取得に失敗しました"
+        );
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setLoadingAppliedJobPostings(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
+
   return (
     <div>
       <h1 className="page-title">ホーム</h1>
@@ -87,11 +122,34 @@ export function StudentHome({ intern, token }: { intern: Intern; token: string }
                 {c.latest_message && (
                   <div className="card-meta">
                     {c.latest_message.sender_name ? `${c.latest_message.sender_name}: ` : ""}
-                    {c.latest_message.body}
+                    {c.latest_message.deleted ? "（このメッセージは削除されました）" : c.latest_message.body}
                   </div>
                 )}
               </Link>
             ))}
+          </section>
+
+          <section className="profile-section">
+            <div className="profile-section-header">
+              <h2 className="profile-section-title">エントリー済みの募集</h2>
+              <Link href="/jobs" className="profile-section-edit">
+                募集を探す
+              </Link>
+            </div>
+            {loadingAppliedJobPostings && <p className="muted">読み込み中...</p>}
+            {!loadingAppliedJobPostings && appliedJobPostingsError && (
+              <p className="error-text">{appliedJobPostingsError}</p>
+            )}
+            {!loadingAppliedJobPostings && !appliedJobPostingsError && appliedJobPostings.length === 0 && (
+              <p className="muted">まだエントリーした募集がありません。</p>
+            )}
+            {appliedJobPostings.length > 0 && (
+              <div className="jobs-grid">
+                {appliedJobPostings.map((job) => (
+                  <JobPostingCard key={job.id} job={job} statusLabel="エントリー済み" />
+                ))}
+              </div>
+            )}
           </section>
 
           <section className="profile-section">

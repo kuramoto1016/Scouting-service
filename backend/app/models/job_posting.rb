@@ -1,5 +1,7 @@
 class JobPosting < ApplicationRecord
   belongs_to :company
+  has_many :job_applications, dependent: :destroy
+  has_many :applicant_interns, through: :job_applications, source: :intern
 
   enum :work_style, { online: 0, onsite: 1, hybrid: 2 }, validate: { allow_nil: true }
 

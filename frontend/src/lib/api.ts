@@ -113,6 +113,8 @@ export interface Message {
   sender_intern: { id: number; name: string } | null;
   body: string;
   created_at: string;
+  edited: boolean;
+  deleted: boolean;
   attachments: MessageAttachment[];
 }
 
@@ -148,6 +150,14 @@ export interface JobPostingSearchParams {
 export interface JobPostingListResponse {
   total_count: number;
   job_postings: JobPosting[];
+}
+
+export interface JobApplication {
+  id: number;
+  job_posting_id: number;
+  intern_id: number;
+  created_at: string;
+  already_applied?: boolean;
 }
 
 export class ApiError extends Error {
@@ -405,6 +415,7 @@ export interface Conversation {
     sender_name: string | null;
     body: string;
     created_at: string;
+    deleted: boolean;
   } | null;
   company?: { id: number; name: string };
 }
@@ -483,6 +494,48 @@ export function sendMessage(
   });
 }
 
+/**
+ * Edits a message the caller previously sent. `attachments` follows the same
+ * "presence matters" rule as the backend: omit it to keep the message's
+ * current files, or pass an array (including `[]`) to replace them.
+ */
+export function updateMessage(
+  token: string,
+  conversationId: number,
+  messageId: number,
+  body: string,
+  attachments?: File[]
+) {
+  if (attachments === undefined) {
+    return request<Message>(`/api/v1/conversations/${conversationId}/messages/${messageId}`, {
+      method: "PATCH",
+      token,
+      body: JSON.stringify({ message: { body } }),
+    });
+  }
+
+  const formData = new FormData();
+  formData.set("message[body]", body);
+  if (attachments.length === 0) {
+    formData.append("message[attachments][]", "");
+  } else {
+    attachments.forEach((file) => formData.append("message[attachments][]", file));
+  }
+
+  return request<Message>(`/api/v1/conversations/${conversationId}/messages/${messageId}`, {
+    method: "PATCH",
+    token,
+    body: formData,
+  });
+}
+
+export function deleteMessage(token: string, conversationId: number, messageId: number) {
+  return request<Message>(`/api/v1/conversations/${conversationId}/messages/${messageId}`, {
+    method: "DELETE",
+    token,
+  });
+}
+
 export function fetchJobPostings(search: JobPostingSearchParams = {}) {
   const query = new URLSearchParams();
   if (search.graduationYear) query.set("graduation_year", String(search.graduationYear));
@@ -499,6 +552,25 @@ export function fetchJobPostings(search: JobPostingSearchParams = {}) {
 
 export function fetchJobPosting(id: number) {
   return request<JobPosting>(`/api/v1/job_postings/${id}`);
+}
+
+export function applyToJobPosting(token: string, jobPostingId: number) {
+  return request<JobApplication>(`/api/v1/job_postings/${jobPostingId}/applications`, {
+    method: "POST",
+    token,
+  });
+}
+
+export function fetchJobPostingApplicants(token: string, jobPostingId: number) {
+  return request<Intern[]>(`/api/v1/job_postings/${jobPostingId}/applications`, { token });
+}
+
+export function fetchAppliedJobPostings(token: string, limit?: number) {
+  const query = new URLSearchParams();
+  if (limit) query.set("limit", String(limit));
+
+  const qs = query.toString();
+  return request<JobPostingListResponse>(`/api/v1/job_applications${qs ? `?${qs}` : ""}`, { token });
 }
 
 export interface JobPostingInput {
@@ -519,5 +591,87 @@ export function createJobPosting(token: string, params: JobPostingInput) {
     method: "POST",
     token,
     body: JSON.stringify({ job_posting: params }),
+  });
+}
+
+export type ScheduleStatus = "open" | "confirmed" | "cancelled";
+export type ScheduleAnswer = "available" | "unavailable" | "maybe";
+
+export interface ScheduleSlotResponse {
+  intern_id: number;
+  answer: ScheduleAnswer;
+}
+
+export interface ScheduleSlot {
+  id: number;
+  starts_at: string;
+  ends_at: string;
+  responses?: ScheduleSlotResponse[];
+}
+
+export interface Schedule {
+  id: number;
+  title: string;
+  status: ScheduleStatus;
+  company: { id: number; name: string };
+  interns: { id: number; name: string }[];
+  confirmed_slot_id: number | null;
+  slots: ScheduleSlot[];
+}
+
+export function fetchSchedules(token: string) {
+  return request<Schedule[]>("/api/v1/schedules", { token });
+}
+
+export function fetchSchedule(token: string, scheduleId: number) {
+  return request<Schedule>(`/api/v1/schedules/${scheduleId}`, { token });
+}
+
+export interface ScheduleSlotInput {
+  starts_at: string;
+  ends_at: string;
+}
+
+export function createSchedule(
+  token: string,
+  params: { title: string; internIds: number[]; slots: ScheduleSlotInput[]; jobPostingId?: number }
+) {
+  return request<Schedule>("/api/v1/schedules", {
+    method: "POST",
+    token,
+    body: JSON.stringify({
+      title: params.title,
+      intern_ids: params.internIds,
+      slots: params.slots,
+      ...(params.jobPostingId ? { job_posting_id: params.jobPostingId } : {}),
+    }),
+  });
+}
+
+export function confirmSchedule(token: string, scheduleId: number, scheduleSlotId: number) {
+  return request<Schedule>(`/api/v1/schedules/${scheduleId}/confirm`, {
+    method: "PATCH",
+    token,
+    body: JSON.stringify({ schedule_slot_id: scheduleSlotId }),
+  });
+}
+
+export function cancelSchedule(token: string, scheduleId: number) {
+  return request<Schedule>(`/api/v1/schedules/${scheduleId}/cancel`, {
+    method: "PATCH",
+    token,
+  });
+}
+
+export function respondToScheduleSlot(
+  token: string,
+  scheduleId: number,
+  scheduleSlotId: number,
+  answer: ScheduleAnswer
+) {
+  return request<ScheduleSlotResponse>(`/api/v1/schedules/${scheduleId}/slots/${scheduleSlotId}/response`, {
+    method: "PATCH",
+    token,
+    body: JSON.stringify({ answer }),
   });
 }

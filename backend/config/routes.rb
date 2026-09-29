@@ -9,6 +9,7 @@ Rails.application.routes.draw do
       post "auth/intern_signup", to: "intern_registrations#create"
       post "auth/company_signup", to: "company_registrations#create"
       get "me", to: "me#show"
+      get "job_applications", to: "job_applications#mine"
 
       resources :interns, only: %i[index show] do
         patch "student_profile/:section", to: "student_profiles#update", as: :student_profile_section
@@ -19,12 +20,22 @@ Rails.application.routes.draw do
         resources :student_highlights, only: %i[create update destroy]
       end
 
-      resources :job_postings, only: %i[index show create update destroy]
+      resources :job_postings, only: %i[index show create update destroy] do
+        resources :applications, only: %i[index create], controller: :job_applications
+      end
 
       resources :conversations, only: %i[index show create update] do
-        resources :messages, only: %i[index create] do
+        resources :messages, only: %i[index create update destroy] do
           resources :attachments, only: %i[show], controller: :message_attachments
         end
+      end
+
+      resources :schedules, only: %i[index show create] do
+        member do
+          patch :confirm
+          patch :cancel
+        end
+        patch "slots/:schedule_slot_id/response", to: "schedule_responses#update"
       end
     end
   end

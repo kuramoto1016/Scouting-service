@@ -5,7 +5,7 @@ import { jobCategoryLabel, jobSubcategoryLabel, usesSkillTags } from "@/lib/job-
 
 const MAX_VISIBLE_SKILLS = 3;
 
-export function JobPostingCard({ job }: { job: JobPosting }) {
+export function JobPostingCard({ job, statusLabel }: { job: JobPosting; statusLabel?: string }) {
   const dateRange = formatDateRange(job.starts_on, job.ends_on);
   const metaParts = [
     job.graduation_year ? `${String(job.graduation_year).slice(2)}卒` : null,
@@ -19,6 +19,7 @@ export function JobPostingCard({ job }: { job: JobPosting }) {
 
   return (
     <Link href={`/jobs/${job.id}`} className="job-card">
+      {statusLabel && <span className="job-card-status">{statusLabel}</span>}
       {job.deadline_soon && <span className="job-card-badge">締切間近</span>}
       <div className="job-card-thumb" style={{ background: jobCategoryGradient(job.job_category) }}>
         <span className="job-card-thumb-icon">{jobCategoryIcon(job.job_category)}</span>

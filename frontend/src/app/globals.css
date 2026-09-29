@@ -15,6 +15,7 @@
   --surface-muted: #eef1f5;
   --muted: #55677a;
   --danger: #c8342a;
+  --success: #0f766e;
 }
 
 html {
@@ -663,6 +664,42 @@ button[type="submit"]:disabled {
   overflow-wrap: anywhere;
 }
 
+.teams-post-edited {
+  font-weight: 400;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.teams-post-deleted {
+  font-style: italic;
+}
+
+.teams-post-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.teams-post-edit-form textarea {
+  min-height: 60px;
+  resize: vertical;
+}
+
+.teams-post-edit-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.teams-post-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.4rem;
+}
+
+.teams-post-actions button {
+  font-size: 0.75rem;
+}
+
 .teams-error {
   padding: 0 1.2rem;
 }
@@ -1089,6 +1126,19 @@ button[type="submit"]:disabled {
   z-index: 1;
 }
 
+.job-card-status {
+  position: absolute;
+  top: 0.6rem;
+  left: 0.6rem;
+  background: var(--success);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: bold;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  z-index: 1;
+}
+
 .job-card-badge-static {
   position: static;
   display: inline-block;
@@ -1488,6 +1538,11 @@ button[type="submit"]:disabled {
 
 .portfolio-item-card {
   background: var(--surface);
+}
+
+.schedule-slot-confirmed {
+  border-color: var(--accent);
+  background: var(--accent-soft);
 }
 
 .skill-category-tabs {
