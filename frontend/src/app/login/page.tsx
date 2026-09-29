@@ -22,7 +22,7 @@ export default function LoginPage() {
       const res = await login({ accountType, email, password });
       if (res.account && res.account_type) {
         signIn(res.token, res.account_type, res.account);
-        router.push(homePathFor(res.account_type));
+        router.push(homePathFor());
       }
     } catch (err) {
       if (err instanceof ApiError) setErrors(err.errors);

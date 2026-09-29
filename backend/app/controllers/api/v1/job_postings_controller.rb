@@ -17,6 +17,7 @@ module Api
                                   .with_job_category(params[:job_category])
                                   .with_job_subcategory(params[:job_subcategory])
                                   .with_location(params[:location])
+                                  .with_company(params[:company_id])
                                   .order(created_at: :desc)
 
         render json: {

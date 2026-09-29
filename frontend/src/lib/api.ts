@@ -2,9 +2,9 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3
 
 export type AccountType = "intern" | "company";
 
-/** Where to send a signed-in user by default: interns to job listings, companies to the intern roster. */
-export function homePathFor(accountType: AccountType): string {
-  return accountType === "company" ? "/interns" : "/jobs";
+/** Where to send a signed-in user by default: their personalized dashboard. */
+export function homePathFor(): string {
+  return "/home";
 }
 
 export type SchoolType = "university" | "graduate_school" | "vocational_school" | "technical_college" | "other";
@@ -132,6 +132,7 @@ export interface JobPostingSearchParams {
   jobCategory?: string;
   jobSubcategory?: string;
   location?: string;
+  companyId?: number;
 }
 
 export interface JobPostingListResponse {
@@ -444,6 +445,7 @@ export function fetchJobPostings(search: JobPostingSearchParams = {}) {
   if (search.jobCategory) query.set("job_category", search.jobCategory);
   if (search.jobSubcategory) query.set("job_subcategory", search.jobSubcategory);
   if (search.location) query.set("location", search.location);
+  if (search.companyId) query.set("company_id", String(search.companyId));
 
   const qs = query.toString();
   return request<JobPostingListResponse>(`/api/v1/job_postings${qs ? `?${qs}` : ""}`);

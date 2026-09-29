@@ -34,6 +34,7 @@ class JobPosting < ApplicationRecord
 
     where("location LIKE ?", "%#{sanitize_sql_like(location.strip)}%")
   }
+  scope :with_company, ->(company_id) { company_id.blank? ? all : where(company_id: company_id) }
 
   def deadline_soon?
     ends_on.present? && ends_on >= Date.current && ends_on <= DEADLINE_SOON_WITHIN.from_now.to_date
