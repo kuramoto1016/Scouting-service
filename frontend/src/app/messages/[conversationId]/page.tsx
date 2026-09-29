@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, FormEvent, useRef, useCallback } from "react";
+import { useEffect, useState, FormEvent, ChangeEvent, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
@@ -32,6 +32,18 @@ function initials(name: string) {
     .toUpperCase();
 }
 
+function formatByteSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes}B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
+}
+
+function isImageAttachment(contentType: string): boolean {
+  return contentType.startsWith("image/");
+}
+
+const MAX_ATTACHMENTS = 5;
+
 export default function MessagesPage() {
   const params = useParams<{ conversationId: string }>();
   const conversationId = Number(params.conversationId);
@@ -46,7 +58,9 @@ export default function MessagesPage() {
   const [loadingMessages, setLoadingMessages] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (loading) return;
@@ -101,19 +115,35 @@ export default function MessagesPage() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!token || !body.trim()) return;
+    if (!token || (!body.trim() && pendingFiles.length === 0)) return;
     setSending(true);
     setError(null);
     try {
-      const msg = await sendMessage(token, conversationId, body.trim());
+      const msg = await sendMessage(token, conversationId, body.trim(), pendingFiles);
       setMessages((prev) => [...prev, msg]);
       setBody("");
+      setPendingFiles([]);
       loadConversations();
     } catch (err) {
       setError(err instanceof ApiError ? err.errors.join(", ") : "送信に失敗しました");
     } finally {
       setSending(false);
     }
+  };
+
+  const handleFileSelect = (e: ChangeEvent<HTMLInputElement>) => {
+    const selected = Array.from(e.target.files ?? []);
+    if (selected.length === 0) return;
+    setError(null);
+    setPendingFiles((prev) => {
+      const next = [...prev, ...selected].slice(0, MAX_ATTACHMENTS);
+      return next;
+    });
+    e.target.value = "";
+  };
+
+  const removePendingFile = (index: number) => {
+    setPendingFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   if (loading || !token) return null;
@@ -134,18 +164,6 @@ export default function MessagesPage() {
 
   return (
     <div className="teams-shell">
-      <aside className="teams-rail" aria-label="メッセージナビゲーション">
-        <div className="teams-rail-item active" title="チャット">
-          💬
-        </div>
-        <Link href={accountType === "company" ? "/interns" : "/jobs"} className="teams-rail-item" title="探す">
-          🔎
-        </Link>
-        <Link href="/mypage" className="teams-rail-item" title="マイページ">
-          👤
-        </Link>
-      </aside>
-
       <aside className="teams-sidebar">
         <div className="teams-sidebar-header">
           <h1>チャット</h1>
@@ -217,7 +235,37 @@ export default function MessagesPage() {
                   <span>{m.sender_type === "company" ? conversation?.company?.name ?? "企業" : m.sender_intern?.name ?? "不明なユーザー"}</span>
                   <time>{new Date(m.created_at).toLocaleString("ja-JP")}</time>
                 </div>
-                <p>{m.body}</p>
+                {m.body && <p>{m.body}</p>}
+                {m.attachments.length > 0 && (
+                  <div className="teams-attachment-list">
+                    {m.attachments.map((attachment) =>
+                      isImageAttachment(attachment.content_type) ? (
+                        <a
+                          key={attachment.id}
+                          href={attachment.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="teams-attachment-image-link"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element -- external, dynamically-sized user upload; next/image adds no benefit here */}
+                          <img src={attachment.url} alt={attachment.filename} className="teams-attachment-image" />
+                        </a>
+                      ) : (
+                        <a
+                          key={attachment.id}
+                          href={attachment.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="teams-attachment-file"
+                        >
+                          <span className="material-symbols-outlined teams-attachment-icon">attach_file</span>
+                          <span className="teams-attachment-name">{attachment.filename}</span>
+                          <span className="teams-attachment-size">{formatByteSize(attachment.byte_size)}</span>
+                        </a>
+                      )
+                    )}
+                  </div>
+                )}
               </div>
             </article>
           ))}
@@ -226,21 +274,52 @@ export default function MessagesPage() {
         </section>
 
         {error && <p className="error-text teams-error">{error}</p>}
+        {pendingFiles.length > 0 && (
+          <div className="teams-pending-attachments">
+            {pendingFiles.map((file, index) => (
+              <span key={`${file.name}-${index}`} className="teams-pending-attachment">
+                <span className="material-symbols-outlined teams-pending-attachment-icon" aria-hidden="true">
+                  attach_file
+                </span>
+                {file.name}
+                <button
+                  type="button"
+                  onClick={() => removePendingFile(index)}
+                  aria-label={`${file.name} を削除`}
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="teams-composer">
           <textarea
             value={body}
             onChange={(e) => setBody(e.target.value)}
             placeholder={`${headerTitle} にメッセージを送信`}
-            required
           />
           <div className="teams-composer-actions">
-            <button type="button" className="teams-tool-button" title="添付" aria-label="添付">
-              ＋
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              onChange={handleFileSelect}
+              style={{ display: "none" }}
+            />
+            <button
+              type="button"
+              className="teams-tool-button"
+              title="添付"
+              aria-label="添付"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={pendingFiles.length >= MAX_ATTACHMENTS}
+            >
+              <span className="material-symbols-outlined" aria-hidden="true">
+                attach_file
+              </span>
             </button>
-            <button type="button" className="teams-tool-button" title="書式" aria-label="書式">
-              A
-            </button>
-            <button type="submit" disabled={sending}>
+            <button type="submit" disabled={sending || (!body.trim() && pendingFiles.length === 0)}>
               送信
             </button>
           </div>

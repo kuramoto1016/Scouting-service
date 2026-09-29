@@ -26,6 +26,13 @@ Rails.application.configure do
   # Change to :null_store to avoid any caching.
   config.cache_store = :memory_store
 
+  # Store uploaded files (message attachments) on the local disk.
+  config.active_storage.service = :local
+
+  # Needed so Active Storage can generate absolute URLs for attachments.
+  Rails.application.routes.default_url_options[:host] = "localhost"
+  Rails.application.routes.default_url_options[:port] = ENV.fetch("PORT", 3001)
+
   # Print deprecation notices to the Rails logger.
   config.active_support.deprecation = :log
 

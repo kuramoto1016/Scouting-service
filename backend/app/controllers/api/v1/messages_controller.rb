@@ -7,7 +7,7 @@ module Api
 
       # GET /api/v1/conversations/:conversation_id/messages
       def index
-        messages = @conversation.messages.includes(:sender_intern).ordered
+        messages = @conversation.messages.includes(:sender_intern, attachments_attachments: :blob).ordered
         render json: messages.map { |m| message_json(m) }
       end
 
@@ -25,7 +25,7 @@ module Api
       private
 
       def message_params
-        params.require(:message).permit(:body)
+        params.require(:message).permit(:body, attachments: [])
       end
 
       def sender_type
@@ -53,7 +53,18 @@ module Api
           sender_type: message.sender_type,
           sender_intern: message.sender_intern && { id: message.sender_intern.id, name: message.sender_intern.name },
           body: message.body,
-          created_at: message.created_at
+          created_at: message.created_at,
+          attachments: message.attachments.map { |a| attachment_json(a) }
+        }
+      end
+
+      def attachment_json(attachment)
+        {
+          id: attachment.id,
+          filename: attachment.filename.to_s,
+          content_type: attachment.content_type,
+          byte_size: attachment.byte_size,
+          url: url_for(attachment)
         }
       end
     end
