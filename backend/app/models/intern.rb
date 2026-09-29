@@ -7,6 +7,8 @@ class Intern < ApplicationRecord
   has_many :schedule_participants, dependent: :destroy
   has_many :schedules, through: :schedule_participants
   has_many :schedule_responses, dependent: :destroy
+  has_many :job_applications, dependent: :destroy
+  has_many :applied_job_postings, through: :job_applications, source: :job_posting
   has_one :student_profile, dependent: :destroy
 
   EMAIL_REGEXP = /\A[^@\s]+@[^@\s]+\z/

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_29_110001) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_29_120002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -77,6 +77,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_110001) do
     t.string "password_digest", null: false
     t.datetime "updated_at", null: false
     t.index ["email"], name: "index_interns_on_email", unique: true
+  end
+
+  create_table "job_applications", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "intern_id", null: false
+    t.bigint "job_posting_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["intern_id"], name: "index_job_applications_on_intern_id"
+    t.index ["job_posting_id", "intern_id"], name: "index_job_applications_on_job_posting_id_and_intern_id", unique: true
+    t.index ["job_posting_id"], name: "index_job_applications_on_job_posting_id"
   end
 
   create_table "job_postings", force: :cascade do |t|
@@ -165,11 +175,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_110001) do
     t.bigint "company_id", null: false
     t.bigint "confirmed_slot_id"
     t.datetime "created_at", null: false
+    t.bigint "job_posting_id"
     t.string "status", default: "open", null: false
     t.string "title", null: false
     t.datetime "updated_at", null: false
     t.index ["company_id"], name: "index_schedules_on_company_id"
     t.index ["confirmed_slot_id"], name: "index_schedules_on_confirmed_slot_id"
+    t.index ["job_posting_id"], name: "index_schedules_on_job_posting_id"
     t.index ["status"], name: "index_schedules_on_status"
   end
 
@@ -227,6 +239,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_110001) do
   add_foreign_key "conversation_participants", "conversations"
   add_foreign_key "conversation_participants", "interns"
   add_foreign_key "conversations", "companies"
+  add_foreign_key "job_applications", "interns"
+  add_foreign_key "job_applications", "job_postings"
   add_foreign_key "job_postings", "companies"
   add_foreign_key "messages", "conversations"
   add_foreign_key "messages", "interns", column: "sender_intern_id"
@@ -237,6 +251,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_110001) do
   add_foreign_key "schedule_responses", "schedule_slots"
   add_foreign_key "schedule_slots", "schedules"
   add_foreign_key "schedules", "companies"
+  add_foreign_key "schedules", "job_postings"
   add_foreign_key "schedules", "schedule_slots", column: "confirmed_slot_id"
   add_foreign_key "student_desired_roles", "student_profiles"
   add_foreign_key "student_highlights", "student_profiles"

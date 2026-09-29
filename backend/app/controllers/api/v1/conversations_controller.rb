@@ -115,7 +115,8 @@ module Api
           sender_type: message.sender_type,
           sender_name: message.sender_type == "company" ? company.name : message.sender_intern&.name,
           body: message.deleted? ? "" : message.body,
-          created_at: message.created_at
+          created_at: message.created_at,
+          deleted: message.deleted?
         }
       end
 

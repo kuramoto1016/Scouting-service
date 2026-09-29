@@ -87,7 +87,7 @@ export function StudentHome({ intern, token }: { intern: Intern; token: string }
                 {c.latest_message && (
                   <div className="card-meta">
                     {c.latest_message.sender_name ? `${c.latest_message.sender_name}: ` : ""}
-                    {c.latest_message.body}
+                    {c.latest_message.deleted ? "（このメッセージは削除されました）" : c.latest_message.body}
                   </div>
                 )}
               </Link>

@@ -400,7 +400,9 @@ export default function MessagesPage() {
                 </div>
                 <p className="teams-chat-preview">
                   {item.latest_message
-                    ? `${item.latest_message.sender_name ?? "企業"}: ${item.latest_message.body}`
+                    ? `${item.latest_message.sender_name ?? "企業"}: ${
+                        item.latest_message.deleted ? "（このメッセージは削除されました）" : item.latest_message.body
+                      }`
                     : `${item.participant_count}人の会話`}
                 </p>
               </div>

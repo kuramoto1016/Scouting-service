@@ -29,8 +29,19 @@ module Api
       def create
         return render_unauthorized unless current_account.is_a?(Company)
 
-        schedule = current_account.schedules.new(title: params[:title])
-        Array(params[:intern_ids]).map(&:to_i).uniq.each { |id| schedule.schedule_participants.build(intern_id: id) }
+        job_posting = schedule_job_posting
+        intern_ids = Array(params[:intern_ids]).map(&:to_i).uniq
+        if job_posting
+          return render_unauthorized unless job_posting.company_id == current_account.id
+
+          applicant_ids = job_posting.job_applications.where(intern_id: intern_ids).pluck(:intern_id)
+          if applicant_ids.sort != intern_ids.sort
+            return render json: { error: "この求人にエントリーした学生のみ対象にできます" }, status: :unprocessable_entity
+          end
+        end
+
+        schedule = current_account.schedules.new(title: params[:title], job_posting: job_posting)
+        intern_ids.each { |id| schedule.schedule_participants.build(intern_id: id) }
         Array(params[:slots]).each do |slot|
           schedule.schedule_slots.build(starts_at: slot[:starts_at], ends_at: slot[:ends_at])
         end
@@ -74,6 +85,12 @@ module Api
 
       def authorize_company_owner!
         render_unauthorized unless current_account.is_a?(Company) && @schedule.company_id == current_account.id
+      end
+
+      def schedule_job_posting
+        return nil if params[:job_posting_id].blank?
+
+        JobPosting.find(params[:job_posting_id])
       end
 
       def ensure_open_schedule!

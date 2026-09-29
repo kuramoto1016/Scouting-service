@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState, FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState, FormEvent } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
-import { createSchedule, fetchInterns, ApiError, Intern } from "@/lib/api";
+import { createSchedule, fetchInterns, fetchJobPostingApplicants, ApiError, Intern } from "@/lib/api";
 
 interface SlotDraft {
   date: string;
@@ -16,6 +16,14 @@ type SlotParseResult = { slot: ParsedSlot | null; error: string | null };
 
 function emptySlot(): SlotDraft {
   return { date: "", startTime: "", endTime: "" };
+}
+
+function parsePositiveIntegerParam(value: string | null): number | null | undefined {
+  if (value === null) return undefined;
+  if (!/^[1-9]\d*$/.test(value)) return null;
+
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) ? parsed : null;
 }
 
 function isMatchingLocalDateTime(value: Date, date: string, time: string): boolean {
@@ -55,8 +63,21 @@ function slotToIso(slot: SlotDraft): SlotParseResult | null {
 }
 
 export default function NewSchedulePage() {
+  return (
+    <Suspense fallback={<p className="muted">読み込み中...</p>}>
+      <NewSchedulePageContent />
+    </Suspense>
+  );
+}
+
+function NewSchedulePageContent() {
   const { token, accountType, loading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const jobIdParam = searchParams.get("job_id");
+  const parsedJobId = parsePositiveIntegerParam(jobIdParam);
+  const jobPostingId = parsedJobId ?? undefined;
+  const hasInvalidJobId = parsedJobId === null;
   const [title, setTitle] = useState("");
   const [interns, setInterns] = useState<Intern[]>([]);
   const [loadingInterns, setLoadingInterns] = useState(true);
@@ -78,11 +99,22 @@ export default function NewSchedulePage() {
 
   useEffect(() => {
     if (!token || accountType !== "company") return;
-    fetchInterns(token)
+
+    if (hasInvalidJobId) {
+      queueMicrotask(() => {
+        setInterns([]);
+        setErrors(["求人IDが不正です"]);
+        setLoadingInterns(false);
+      });
+      return;
+    }
+
+    const loadInterns = jobPostingId ? fetchJobPostingApplicants(token, jobPostingId) : fetchInterns(token);
+    loadInterns
       .then(setInterns)
       .catch(() => setInterns([]))
       .finally(() => setLoadingInterns(false));
-  }, [token, accountType]);
+  }, [token, accountType, jobPostingId, hasInvalidJobId]);
 
   const toggleIntern = (internId: number) => {
     setSelectedInternIds((prev) =>
@@ -100,6 +132,10 @@ export default function NewSchedulePage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!token) return;
+    if (hasInvalidJobId) {
+      setErrors(["求人IDが不正です"]);
+      return;
+    }
     setErrors([]);
 
     const slotResults = slots.map(slotToIso).filter((result): result is SlotParseResult => result !== null);
@@ -121,7 +157,7 @@ export default function NewSchedulePage() {
 
     setSubmitting(true);
     try {
-      const schedule = await createSchedule(token, { title, internIds: selectedInternIds, slots: parsedSlots });
+      const schedule = await createSchedule(token, { title, internIds: selectedInternIds, slots: parsedSlots, jobPostingId });
       router.push(`/schedules/${schedule.id}`);
     } catch (err) {
       setErrors(err instanceof ApiError ? err.errors : ["日程調整の作成に失敗しました"]);
@@ -201,9 +237,13 @@ export default function NewSchedulePage() {
         </fieldset>
 
         <fieldset className="picker-fieldset">
-          <legend>対象の学生（{selectedInternIds.length}人選択中）</legend>
+          <legend>{jobPostingId ? "エントリー済み学生" : "対象の学生"}（{selectedInternIds.length}人選択中）</legend>
           {loadingInterns && <p className="muted">読み込み中...</p>}
-          {!loadingInterns && interns.length === 0 && <p className="muted">インターン生が見つかりませんでした。</p>}
+          {!loadingInterns && interns.length === 0 && (
+            <p className="muted">
+              {jobPostingId ? "この求人にエントリーしている学生がいません。" : "インターン生が見つかりませんでした。"}
+            </p>
+          )}
           {interns.map((intern) => (
             <label key={intern.id} style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.3rem" }}>
               <input

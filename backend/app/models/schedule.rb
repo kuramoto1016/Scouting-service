@@ -1,5 +1,6 @@
 class Schedule < ApplicationRecord
   belongs_to :company
+  belongs_to :job_posting, optional: true
   belongs_to :confirmed_slot, class_name: "ScheduleSlot", optional: true
 
   # Must run before the has_many :schedule_slots dependent: :destroy below:

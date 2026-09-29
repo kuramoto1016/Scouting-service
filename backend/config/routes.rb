@@ -19,7 +19,9 @@ Rails.application.routes.draw do
         resources :student_highlights, only: %i[create update destroy]
       end
 
-      resources :job_postings, only: %i[index show create update destroy]
+      resources :job_postings, only: %i[index show create update destroy] do
+        resources :applications, only: %i[index create], controller: :job_applications
+      end
 
       resources :conversations, only: %i[index show create update] do
         resources :messages, only: %i[index create update destroy] do

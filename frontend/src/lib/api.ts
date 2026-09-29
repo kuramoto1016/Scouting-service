@@ -152,6 +152,13 @@ export interface JobPostingListResponse {
   job_postings: JobPosting[];
 }
 
+export interface JobApplication {
+  id: number;
+  job_posting_id: number;
+  intern_id: number;
+  created_at: string;
+}
+
 export class ApiError extends Error {
   status: number;
   errors: string[];
@@ -407,6 +414,7 @@ export interface Conversation {
     sender_name: string | null;
     body: string;
     created_at: string;
+    deleted: boolean;
   } | null;
   company?: { id: number; name: string };
 }
@@ -545,6 +553,17 @@ export function fetchJobPosting(id: number) {
   return request<JobPosting>(`/api/v1/job_postings/${id}`);
 }
 
+export function applyToJobPosting(token: string, jobPostingId: number) {
+  return request<JobApplication>(`/api/v1/job_postings/${jobPostingId}/applications`, {
+    method: "POST",
+    token,
+  });
+}
+
+export function fetchJobPostingApplicants(token: string, jobPostingId: number) {
+  return request<Intern[]>(`/api/v1/job_postings/${jobPostingId}/applications`, { token });
+}
+
 export interface JobPostingInput {
   title: string;
   description: string;
@@ -606,12 +625,17 @@ export interface ScheduleSlotInput {
 
 export function createSchedule(
   token: string,
-  params: { title: string; internIds: number[]; slots: ScheduleSlotInput[] }
+  params: { title: string; internIds: number[]; slots: ScheduleSlotInput[]; jobPostingId?: number }
 ) {
   return request<Schedule>("/api/v1/schedules", {
     method: "POST",
     token,
-    body: JSON.stringify({ title: params.title, intern_ids: params.internIds, slots: params.slots }),
+    body: JSON.stringify({
+      title: params.title,
+      intern_ids: params.internIds,
+      slots: params.slots,
+      ...(params.jobPostingId ? { job_posting_id: params.jobPostingId } : {}),
+    }),
   });
 }
 
