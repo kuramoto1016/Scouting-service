@@ -34,8 +34,7 @@ export default function MessagesIndexPage() {
   return (
     <div className="teams-empty-state">
       <h1 className="page-title">チャット</h1>
-      {error && <p className="error-text">{error}</p>}
-      <p className="muted">まだ会話がありません。</p>
+      {error ? <p className="error-text">{error}</p> : <p className="muted">まだ会話がありません。</p>}
       <Link href={accountType === "company" ? "/interns" : "/jobs"} className="btn-primary">
         {accountType === "company" ? "インターン生を探す" : "募集を探す"}
       </Link>
