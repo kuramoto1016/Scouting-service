@@ -15,23 +15,9 @@
   --danger: #c8342a;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #14161a;
-    --surface: #1e2126;
-    --foreground: #eaf2f8;
-    --border: #2c2f36;
-    --muted: #a7b7c6;
-    --accent-soft: #16303f;
-    --danger: #ff6b60;
-    /* Dark backgrounds are dark enough that the original bright accent
-       clears 4.5:1 as text, so reuse it instead of the light-mode value. */
-    --accent-text: #1ba7e0;
-  }
-}
-
 html {
   height: 100%;
+  color-scheme: light;
 }
 
 html,
@@ -98,12 +84,6 @@ textarea:focus-visible,
 select:focus-visible {
   outline: 2px solid var(--accent-dark);
   outline-offset: 2px;
-}
-
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
 }
 
 .navbar {
