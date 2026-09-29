@@ -1,12 +1,7 @@
 import Link from "next/link";
 import { JobPosting } from "@/lib/api";
-import {
-  WORK_STYLE_LABELS,
-  JOB_CATEGORY_LABELS,
-  JOB_CATEGORY_GRADIENTS,
-  JOB_CATEGORY_ICONS,
-  formatDateRange,
-} from "@/lib/job-posting-labels";
+import { WORK_STYLE_LABELS, jobCategoryGradient, jobCategoryIcon, formatDateRange } from "@/lib/job-posting-labels";
+import { jobCategoryLabel, jobSubcategoryLabel, usesSkillTags } from "@/lib/job-taxonomy";
 
 const MAX_VISIBLE_SKILLS = 3;
 
@@ -18,25 +13,27 @@ export function JobPostingCard({ job }: { job: JobPosting }) {
     job.work_style ? WORK_STYLE_LABELS[job.work_style] : null,
   ].filter(Boolean);
 
-  const visibleSkills = job.skills.slice(0, MAX_VISIBLE_SKILLS);
+  const showSkillTags = usesSkillTags(job.job_category);
+  const visibleSkills = showSkillTags ? job.skills.slice(0, MAX_VISIBLE_SKILLS) : [];
   const extraSkillCount = job.skills.length - visibleSkills.length;
 
   return (
     <Link href={`/jobs/${job.id}`} className="job-card">
       {job.deadline_soon && <span className="job-card-badge">締切間近</span>}
-      <div
-        className="job-card-thumb"
-        style={{ background: job.job_category ? JOB_CATEGORY_GRADIENTS[job.job_category] : undefined }}
-      >
-        <span className="job-card-thumb-icon">{job.job_category ? JOB_CATEGORY_ICONS[job.job_category] : "✦"}</span>
-        {job.job_category && <span className="job-card-thumb-label">{JOB_CATEGORY_LABELS[job.job_category]}</span>}
+      <div className="job-card-thumb" style={{ background: jobCategoryGradient(job.job_category) }}>
+        <span className="job-card-thumb-icon">{jobCategoryIcon(job.job_category)}</span>
+        {job.job_category && (
+          <span className="job-card-thumb-label">
+            {jobSubcategoryLabel(job.job_category, job.job_subcategory) ?? jobCategoryLabel(job.job_category)}
+          </span>
+        )}
       </div>
       <div className="job-card-body">
         <h3 className="job-card-title">{job.title}</h3>
         <div className="job-card-company">{job.company.name}</div>
         {metaParts.length > 0 && <div className="job-card-meta">{metaParts.join("｜")}</div>}
         {job.location && <div className="job-card-location">{job.location}</div>}
-        {job.skills.length > 0 && (
+        {showSkillTags && job.skills.length > 0 && (
           <div className="tag-list job-card-tags">
             {visibleSkills.map((skill) => (
               <span key={skill} className="tag">

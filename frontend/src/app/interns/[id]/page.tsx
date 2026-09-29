@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
-import { fetchIntern, Intern, ApiError } from "@/lib/api";
+import { fetchIntern, createConversation, Intern, ApiError } from "@/lib/api";
 import { ProfileView } from "@/components/ProfileView";
 import { ProfileSidebar } from "@/components/ProfileSidebar";
 
@@ -17,6 +17,20 @@ export default function InternDetailPage() {
   const [intern, setIntern] = useState<Intern | null>(null);
   const [loadingIntern, setLoadingIntern] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [startingConversation, setStartingConversation] = useState(false);
+
+  const handleStartConversation = async () => {
+    if (!token) return;
+    setStartingConversation(true);
+    setError(null);
+    try {
+      const conversation = await createConversation(token, [internId]);
+      router.push(`/messages/${conversation.id}`);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.errors.join(", ") : "会話の開始に失敗しました");
+      setStartingConversation(false);
+    }
+  };
 
   useEffect(() => {
     if (loading) return;
@@ -68,9 +82,15 @@ export default function InternDetailPage() {
           <ProfileSidebar
             intern={intern}
             nav={
-              <Link href={`/messages/intern/${intern.id}`} className="btn-primary" style={{ marginTop: "1rem" }}>
+              <button
+                type="button"
+                className="btn-primary"
+                style={{ marginTop: "1rem" }}
+                onClick={handleStartConversation}
+                disabled={startingConversation}
+              >
                 メッセージを送る
-              </Link>
+              </button>
             }
           />
           <div className="profile-main">

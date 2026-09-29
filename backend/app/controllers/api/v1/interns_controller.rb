@@ -6,10 +6,11 @@ module Api
       before_action :set_intern, only: %i[show]
 
       def index
-        interns = Intern.includes(student_profile: %i[student_desired_roles student_skills portfolio_items])
+        interns = Intern.includes(student_profile: %i[student_desired_roles student_skills portfolio_items student_highlights])
                          .search_keyword(params[:keyword])
                          .with_skill(params[:skill])
-                         .with_job_type(params[:job_type])
+                         .with_job_category(params[:job_category])
+                         .with_job_subcategory(params[:job_subcategory])
                          .with_location(params[:location])
                          .order(:name)
         render json: interns.map { |intern| StudentProfileSerializer.new(intern).as_json }
@@ -22,7 +23,7 @@ module Api
       private
 
       def set_intern
-        @intern = Intern.includes(student_profile: %i[student_desired_roles student_skills portfolio_items])
+        @intern = Intern.includes(student_profile: %i[student_desired_roles student_skills portfolio_items student_highlights])
                          .find(params[:id])
       end
 

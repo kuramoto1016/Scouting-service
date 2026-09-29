@@ -1,7 +1,9 @@
 class Intern < ApplicationRecord
   has_secure_password
 
-  has_many :messages, dependent: :destroy
+  has_many :conversation_participants, dependent: :destroy
+  has_many :conversations, through: :conversation_participants
+  has_many :sent_messages, class_name: "Message", foreign_key: :sender_intern_id, dependent: :nullify, inverse_of: :sender_intern
   has_one :student_profile, dependent: :destroy
 
   EMAIL_REGEXP = /\A[^@\s]+@[^@\s]+\z/
@@ -28,10 +30,18 @@ class Intern < ApplicationRecord
     joins(student_profile: :student_skills).where(student_skills: { name: skill }).distinct
   }
 
-  scope :with_job_type, lambda { |job_type|
-    next all if job_type.blank?
+  scope :with_job_category, lambda { |job_category|
+    next all if job_category.blank?
 
-    joins(student_profile: :student_desired_roles).where(student_desired_roles: { role: job_type }).distinct
+    joins(student_profile: :student_desired_roles)
+      .where(student_desired_roles: { job_category: job_category }).distinct
+  }
+
+  scope :with_job_subcategory, lambda { |job_subcategory|
+    next all if job_subcategory.blank?
+
+    joins(student_profile: :student_desired_roles)
+      .where(student_desired_roles: { job_subcategory: job_subcategory }).distinct
   }
 
   scope :with_location, lambda { |location|

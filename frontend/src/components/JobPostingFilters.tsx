@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { JobCategory, WorkStyle } from "@/lib/api";
-import { WORK_STYLE_LABELS, JOB_CATEGORY_LABELS, WORK_STYLE_OPTIONS, JOB_CATEGORY_OPTIONS } from "@/lib/job-posting-labels";
+import { WorkStyle } from "@/lib/api";
+import { WORK_STYLE_LABELS, WORK_STYLE_OPTIONS } from "@/lib/job-posting-labels";
+import { JOB_TAXONOMY, JOB_CATEGORY_KEYS, subcategoryKeysFor, jobSubcategoryLabel } from "@/lib/job-taxonomy";
 
 export interface JobPostingFilterValues {
   graduationYear: string;
   workStyle: WorkStyle | "";
-  jobCategory: JobCategory | "";
+  jobCategory: string;
+  jobSubcategory: string;
   location: string;
 }
 
@@ -27,6 +29,8 @@ export function JobPostingFilters({
   const update = (patch: Partial<JobPostingFilterValues>) => {
     onChange({ ...values, ...patch });
   };
+
+  const subcategoryOptions = subcategoryKeysFor(values.jobCategory);
 
   return (
     <aside className="job-filters">
@@ -65,15 +69,30 @@ export function JobPostingFilters({
           </select>
         </label>
         <label>
-          職種カテゴリ
+          職種（大分類）
           <select
             value={values.jobCategory}
-            onChange={(e) => update({ jobCategory: e.target.value as JobCategory | "" })}
+            onChange={(e) => update({ jobCategory: e.target.value, jobSubcategory: "" })}
           >
             <option value="">指定なし</option>
-            {JOB_CATEGORY_OPTIONS.map((category) => (
+            {JOB_CATEGORY_KEYS.map((category) => (
               <option key={category} value={category}>
-                {JOB_CATEGORY_LABELS[category]}
+                {JOB_TAXONOMY[category].label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          職種（小分類）
+          <select
+            value={values.jobSubcategory}
+            onChange={(e) => update({ jobSubcategory: e.target.value })}
+            disabled={!values.jobCategory}
+          >
+            <option value="">指定なし</option>
+            {subcategoryOptions.map((subcategory) => (
+              <option key={subcategory} value={subcategory}>
+                {jobSubcategoryLabel(values.jobCategory, subcategory)}
               </option>
             ))}
           </select>

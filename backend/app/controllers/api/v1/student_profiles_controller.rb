@@ -8,7 +8,9 @@ module Api
 
       SECTION_PARAMS = {
         "basic_info" => %i[school_type school_name department graduation_year_month],
-        "desired_conditions" => [ :desired_location, :job_hunting_axes, desired_roles: %i[role priority] ],
+        "desired_conditions" => [
+          :desired_location, :job_hunting_axes, desired_roles: %i[job_category job_subcategory priority]
+        ],
         "self_pr" => %i[bio career_goal]
       }.freeze
 
@@ -44,7 +46,11 @@ module Api
           @profile.update!(attrs.except(:desired_roles))
           @profile.student_desired_roles.destroy_all
           roles.each do |role_attrs|
-            @profile.student_desired_roles.create!(role: role_attrs[:role], priority: role_attrs[:priority])
+            @profile.student_desired_roles.create!(
+              job_category: role_attrs[:job_category],
+              job_subcategory: role_attrs[:job_subcategory],
+              priority: role_attrs[:priority]
+            )
           end
         end
         render json: StudentProfileSerializer.new(@intern).as_json

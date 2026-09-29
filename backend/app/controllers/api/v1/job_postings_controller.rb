@@ -7,7 +7,7 @@ module Api
 
       DETAIL_FIELDS = %i[
         id title description created_at graduation_year starts_on ends_on
-        work_style location job_category skills
+        work_style location job_category job_subcategory skills
       ].freeze
 
       def index
@@ -15,6 +15,7 @@ module Api
                                   .with_graduation_year(params[:graduation_year])
                                   .with_work_style(params[:work_style])
                                   .with_job_category(params[:job_category])
+                                  .with_job_subcategory(params[:job_subcategory])
                                   .with_location(params[:location])
                                   .order(created_at: :desc)
 
@@ -36,7 +37,7 @@ module Api
         if job_posting.save
           render json: serialize_one(job_posting), status: :created
         else
-          render json: { errors: job_posting.errors.full_messages }, status: :unprocessable_entity
+          render_validation_errors(job_posting.errors)
         end
       end
 
@@ -44,7 +45,7 @@ module Api
         if @job_posting.update(job_posting_params)
           render json: serialize_one(@job_posting)
         else
-          render json: { errors: @job_posting.errors.full_messages }, status: :unprocessable_entity
+          render_validation_errors(@job_posting.errors)
         end
       end
 
@@ -66,7 +67,7 @@ module Api
       def job_posting_params
         params.require(:job_posting).permit(
           :title, :description, :graduation_year, :starts_on, :ends_on,
-          :work_style, :location, :job_category, skills: []
+          :work_style, :location, :job_category, :job_subcategory, skills: []
         )
       end
 

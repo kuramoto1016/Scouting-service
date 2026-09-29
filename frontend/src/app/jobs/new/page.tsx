@@ -3,8 +3,17 @@
 import { useEffect, useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
-import { createJobPosting, ApiError, WorkStyle, JobCategory } from "@/lib/api";
-import { WORK_STYLE_LABELS, JOB_CATEGORY_LABELS, WORK_STYLE_OPTIONS, JOB_CATEGORY_OPTIONS } from "@/lib/job-posting-labels";
+import { createJobPosting, ApiError, WorkStyle } from "@/lib/api";
+import { WORK_STYLE_LABELS, WORK_STYLE_OPTIONS } from "@/lib/job-posting-labels";
+import {
+  JOB_TAXONOMY,
+  JobCategoryKey,
+  JOB_CATEGORY_KEYS,
+  subcategoryKeysFor,
+  jobSubcategoryLabel,
+  usesSkillTags,
+} from "@/lib/job-taxonomy";
+import { FieldError } from "@/components/FieldError";
 
 export default function NewJobPage() {
   const { token, accountType, loading } = useAuth();
@@ -16,9 +25,11 @@ export default function NewJobPage() {
   const [endsOn, setEndsOn] = useState("");
   const [workStyle, setWorkStyle] = useState<WorkStyle | "">("");
   const [location, setLocation] = useState("");
-  const [jobCategory, setJobCategory] = useState<JobCategory | "">("");
+  const [jobCategory, setJobCategory] = useState<JobCategoryKey | "">("");
+  const [jobSubcategory, setJobSubcategory] = useState("");
   const [skillsInput, setSkillsInput] = useState("");
   const [errors, setErrors] = useState<string[]>([]);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -32,10 +43,13 @@ export default function NewJobPage() {
     }
   }, [loading, token, accountType, router]);
 
+  const showSkillTags = usesSkillTags(jobCategory);
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!token) return;
     setErrors([]);
+    setFieldErrors({});
     setSubmitting(true);
     try {
       await createJobPosting(token, {
@@ -47,14 +61,22 @@ export default function NewJobPage() {
         work_style: workStyle || null,
         location: location || null,
         job_category: jobCategory || null,
-        skills: skillsInput
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
+        job_subcategory: jobSubcategory || null,
+        skills: showSkillTags
+          ? skillsInput
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean)
+          : [],
       });
       router.push("/jobs");
     } catch (err) {
-      setErrors(err instanceof ApiError ? err.errors : ["掲載に失敗しました"]);
+      if (err instanceof ApiError) {
+        setErrors(err.errors);
+        setFieldErrors(err.fieldErrors);
+      } else {
+        setErrors(["掲載に失敗しました"]);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -80,7 +102,7 @@ export default function NewJobPage() {
             type="number"
             value={graduationYear}
             onChange={(e) => setGraduationYear(e.target.value)}
-            placeholder="例: 2028"
+            placeholder="例: 2028（指定なしなら空欄）"
           />
         </label>
         <label>
@@ -111,24 +133,52 @@ export default function NewJobPage() {
           />
         </label>
         <label>
-          職種カテゴリ
-          <select value={jobCategory} onChange={(e) => setJobCategory(e.target.value as JobCategory | "")}>
+          職種（大分類）
+          <select
+            value={jobCategory}
+            onChange={(e) => {
+              const nextCategory = e.target.value as JobCategoryKey | "";
+              setJobCategory(nextCategory);
+              setJobSubcategory("");
+              if (!usesSkillTags(nextCategory)) setSkillsInput("");
+            }}
+          >
             <option value="">指定なし</option>
-            {JOB_CATEGORY_OPTIONS.map((category) => (
+            {JOB_CATEGORY_KEYS.map((category) => (
               <option key={category} value={category}>
-                {JOB_CATEGORY_LABELS[category]}
+                {JOB_TAXONOMY[category].label}
               </option>
             ))}
           </select>
         </label>
         <label>
-          スキルタグ（カンマ区切り）
-          <input
-            value={skillsInput}
-            onChange={(e) => setSkillsInput(e.target.value)}
-            placeholder="例: Ruby, TypeScript, React"
-          />
+          職種（小分類）
+          <select
+            value={jobSubcategory}
+            onChange={(e) => setJobSubcategory(e.target.value)}
+            disabled={!jobCategory}
+            required={!!jobCategory}
+          >
+            <option value="">{jobCategory ? "選択してください" : "大分類を先に選択してください"}</option>
+            {subcategoryKeysFor(jobCategory).map((subcategory) => (
+              <option key={subcategory} value={subcategory}>
+                {jobSubcategoryLabel(jobCategory, subcategory)}
+              </option>
+            ))}
+          </select>
+          {jobCategory && <p className="muted" style={{ fontSize: "0.8rem" }}>大分類を選択した場合、小分類の選択も必要です</p>}
+          <FieldError messages={fieldErrors.job_subcategory} />
         </label>
+        {showSkillTags && (
+          <label>
+            技術スキルタグ（カンマ区切り）
+            <input
+              value={skillsInput}
+              onChange={(e) => setSkillsInput(e.target.value)}
+              placeholder="例: Ruby, TypeScript, React"
+            />
+          </label>
+        )}
         {errors.length > 0 && (
           <div className="error-text">
             {errors.map((e) => (

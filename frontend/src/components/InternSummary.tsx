@@ -1,4 +1,5 @@
 import { Intern } from "@/lib/api";
+import { jobSubcategoryLabel } from "@/lib/job-taxonomy";
 
 function splitTags(value: string | null): string[] {
   return value
@@ -29,7 +30,7 @@ export function InternSummary({ intern }: { intern: Intern }) {
           {desired_conditions.desired_roles
             .slice()
             .sort((a, b) => a.priority - b.priority)
-            .map((r) => r.role)
+            .map((r) => jobSubcategoryLabel(r.job_category, r.job_subcategory))
             .join(" / ")}
         </p>
       )}

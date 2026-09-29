@@ -4,11 +4,11 @@ import { useEffect, useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
-import { fetchInterns, Intern } from "@/lib/api";
+import { fetchInterns, createConversation, Intern, ApiError } from "@/lib/api";
 import { InternSummary } from "@/components/InternSummary";
 import { SUGGESTED_SKILLS } from "@/components/SkillPicker";
-import { SUGGESTED_JOB_TYPES } from "@/components/JobTypePicker";
 import { SUGGESTED_LOCATIONS } from "@/components/LocationPicker";
+import { JOB_TAXONOMY, JobCategoryKey, JOB_CATEGORY_KEYS, subcategoryKeysFor, jobSubcategoryLabel } from "@/lib/job-taxonomy";
 
 export default function InternsListPage() {
   const { token, accountType, loading } = useAuth();
@@ -18,9 +18,13 @@ export default function InternsListPage() {
 
   const [keywordInput, setKeywordInput] = useState("");
   const [skill, setSkill] = useState("");
-  const [jobType, setJobType] = useState("");
+  const [jobCategory, setJobCategory] = useState<JobCategoryKey | "">("");
+  const [jobSubcategory, setJobSubcategory] = useState("");
   const [location, setLocation] = useState("");
   const [appliedKeyword, setAppliedKeyword] = useState("");
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [startingConversation, setStartingConversation] = useState(false);
+  const [conversationError, setConversationError] = useState<string | null>(null);
 
   useEffect(() => {
     if (loading) return;
@@ -39,10 +43,12 @@ export default function InternsListPage() {
     let cancelled = false;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- guarded by `cancelled` below
     setLoadingInterns(true);
-    fetchInterns(token, { keyword: appliedKeyword, skill, jobType, location })
+    fetchInterns(token, { keyword: appliedKeyword, skill, jobCategory, jobSubcategory, location })
       .then((data) => {
         if (cancelled) return;
         setInterns(data);
+        const visibleIds = new Set(data.map((intern) => intern.id));
+        setSelectedIds((prev) => prev.filter((id) => visibleIds.has(id)));
       })
       .catch(() => {
         if (cancelled) return;
@@ -56,7 +62,7 @@ export default function InternsListPage() {
     return () => {
       cancelled = true;
     };
-  }, [token, accountType, appliedKeyword, skill, jobType, location]);
+  }, [token, accountType, appliedKeyword, skill, jobCategory, jobSubcategory, location]);
 
   const handleSearchSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -67,8 +73,41 @@ export default function InternsListPage() {
     setKeywordInput("");
     setAppliedKeyword("");
     setSkill("");
-    setJobType("");
+    setJobCategory("");
+    setJobSubcategory("");
     setLocation("");
+  };
+
+  const toggleSelected = (internId: number) => {
+    setSelectedIds((prev) =>
+      prev.includes(internId) ? prev.filter((id) => id !== internId) : [...prev, internId]
+    );
+  };
+
+  const handleStartGroupConversation = async () => {
+    if (!token || selectedIds.length === 0) return;
+    setStartingConversation(true);
+    setConversationError(null);
+    try {
+      const conversation = await createConversation(token, selectedIds);
+      router.push(`/messages/${conversation.id}`);
+    } catch (err) {
+      setConversationError(err instanceof ApiError ? err.errors.join(", ") : "会話の開始に失敗しました");
+      setStartingConversation(false);
+    }
+  };
+
+  const handleStartSingleConversation = async (internId: number) => {
+    if (!token) return;
+    setStartingConversation(true);
+    setConversationError(null);
+    try {
+      const conversation = await createConversation(token, [internId]);
+      router.push(`/messages/${conversation.id}`);
+    } catch (err) {
+      setConversationError(err instanceof ApiError ? err.errors.join(", ") : "会話の開始に失敗しました");
+      setStartingConversation(false);
+    }
   };
 
   if (loading || !token || accountType !== "company") return null;
@@ -98,12 +137,33 @@ export default function InternsListPage() {
           </select>
         </label>
         <label>
-          希望職種
-          <select value={jobType} onChange={(e) => setJobType(e.target.value)}>
+          希望職種（大分類）
+          <select
+            value={jobCategory}
+            onChange={(e) => {
+              setJobCategory(e.target.value as JobCategoryKey | "");
+              setJobSubcategory("");
+            }}
+          >
             <option value="">指定なし</option>
-            {SUGGESTED_JOB_TYPES.map((j) => (
-              <option key={j} value={j}>
-                {j}
+            {JOB_CATEGORY_KEYS.map((category) => (
+              <option key={category} value={category}>
+                {JOB_TAXONOMY[category].label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          希望職種（小分類）
+          <select
+            value={jobSubcategory}
+            onChange={(e) => setJobSubcategory(e.target.value)}
+            disabled={!jobCategory}
+          >
+            <option value="">指定なし</option>
+            {subcategoryKeysFor(jobCategory).map((subcategory) => (
+              <option key={subcategory} value={subcategory}>
+                {jobSubcategoryLabel(jobCategory, subcategory)}
               </option>
             ))}
           </select>
@@ -127,10 +187,31 @@ export default function InternsListPage() {
         </div>
       </form>
 
+      {selectedIds.length > 0 && (
+        <div className="card" style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+          <span>{selectedIds.length}人を選択中</span>
+          <button type="button" className="btn-primary" onClick={handleStartGroupConversation} disabled={startingConversation}>
+            選択したインターン生にグループメッセージを送る
+          </button>
+          <button type="button" className="btn-secondary" onClick={() => setSelectedIds([])}>
+            選択を解除
+          </button>
+        </div>
+      )}
+      {conversationError && <p className="error-text">{conversationError}</p>}
+
       {loadingInterns && <p className="muted">読み込み中...</p>}
       {!loadingInterns && interns.length === 0 && <p className="muted">該当するインターン生が見つかりませんでした。</p>}
       {interns.map((intern) => (
         <div key={intern.id} className="card">
+          <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
+            <input
+              type="checkbox"
+              checked={selectedIds.includes(intern.id)}
+              onChange={() => toggleSelected(intern.id)}
+            />
+            グループに追加
+          </label>
           <Link href={`/interns/${intern.id}`} className="card-title card-title-link">
             {intern.name}
           </Link>
@@ -138,7 +219,14 @@ export default function InternsListPage() {
           <InternSummary intern={intern} />
           <div style={{ display: "flex", gap: "1rem" }}>
             <Link href={`/interns/${intern.id}`}>プロフィールを見る</Link>
-            <Link href={`/messages/intern/${intern.id}`}>メッセージを送る</Link>
+            <button
+              type="button"
+              className="link-button"
+              onClick={() => handleStartSingleConversation(intern.id)}
+              disabled={startingConversation}
+            >
+              メッセージを送る
+            </button>
           </div>
         </div>
       ))}

@@ -9,6 +9,7 @@ import { BasicInfoForm } from "../sections/BasicInfoForm";
 import { DesiredConditionsForm } from "../sections/DesiredConditionsForm";
 import { SkillsForm } from "../sections/SkillsForm";
 import { PortfolioItemsForm } from "../sections/PortfolioItemsForm";
+import { HighlightsForm } from "../sections/HighlightsForm";
 import { SelfPrForm } from "../sections/SelfPrForm";
 
 const VALID_SECTIONS: ProfileSection[] = [
@@ -16,6 +17,7 @@ const VALID_SECTIONS: ProfileSection[] = [
   "desired_conditions",
   "skills",
   "portfolio_items",
+  "highlights",
   "self_pr",
 ];
 
@@ -51,6 +53,7 @@ export default function EditSectionPage() {
       {section === "desired_conditions" && <DesiredConditionsForm intern={intern} />}
       {section === "skills" && <SkillsForm intern={intern} />}
       {section === "portfolio_items" && <PortfolioItemsForm intern={intern} />}
+      {section === "highlights" && <HighlightsForm intern={intern} />}
       {section === "self_pr" && <SelfPrForm intern={intern} />}
     </div>
   );

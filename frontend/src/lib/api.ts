@@ -16,6 +16,7 @@ export type ProfileSection =
   | "desired_conditions"
   | "skills"
   | "portfolio_items"
+  | "highlights"
   | "self_pr"
   | "links";
 
@@ -27,7 +28,8 @@ export interface BasicInfo {
 }
 
 export interface DesiredRole {
-  role: string;
+  job_category: string;
+  job_subcategory: string;
   priority: number;
 }
 
@@ -56,6 +58,13 @@ export interface PortfolioItem {
   position: number;
 }
 
+export interface StudentHighlight {
+  id: number;
+  title: string;
+  body: string;
+  position: number;
+}
+
 export interface SelfPr {
   bio: string | null;
   career_goal: string | null;
@@ -78,6 +87,7 @@ export interface Intern {
   desired_conditions: DesiredConditions;
   skills: StudentSkillEntry[];
   portfolio_items: PortfolioItem[];
+  highlights: StudentHighlight[];
   self_pr: SelfPr;
   links: ProfileLink[];
 }
@@ -92,12 +102,12 @@ export interface Company {
 export interface Message {
   id: number;
   sender_type: AccountType;
+  sender_intern: { id: number; name: string } | null;
   body: string;
   created_at: string;
 }
 
 export type WorkStyle = "online" | "onsite" | "hybrid";
-export type JobCategory = "backend" | "frontend" | "mobile" | "infra" | "data" | "design";
 
 export interface JobPosting {
   id: number;
@@ -109,7 +119,8 @@ export interface JobPosting {
   ends_on: string | null;
   work_style: WorkStyle | null;
   location: string | null;
-  job_category: JobCategory | null;
+  job_category: string | null;
+  job_subcategory: string | null;
   skills: string[];
   deadline_soon: boolean;
   company: { id: number; name: string };
@@ -118,7 +129,8 @@ export interface JobPosting {
 export interface JobPostingSearchParams {
   graduationYear?: number | string;
   workStyle?: WorkStyle;
-  jobCategory?: JobCategory;
+  jobCategory?: string;
+  jobSubcategory?: string;
   location?: string;
 }
 
@@ -211,7 +223,8 @@ export function fetchMe(token: string) {
 export interface InternSearchParams {
   keyword?: string;
   skill?: string;
-  jobType?: string;
+  jobCategory?: string;
+  jobSubcategory?: string;
   location?: string;
 }
 
@@ -219,7 +232,8 @@ export function fetchInterns(token: string, search: InternSearchParams = {}) {
   const query = new URLSearchParams();
   if (search.keyword) query.set("keyword", search.keyword);
   if (search.skill) query.set("skill", search.skill);
-  if (search.jobType) query.set("job_type", search.jobType);
+  if (search.jobCategory) query.set("job_category", search.jobCategory);
+  if (search.jobSubcategory) query.set("job_subcategory", search.jobSubcategory);
   if (search.location) query.set("location", search.location);
 
   const qs = query.toString();
@@ -318,39 +332,105 @@ export function reorderPortfolioItems(token: string, internId: number, orderedId
   });
 }
 
-export interface ConversationPartner {
+export interface StudentHighlightInput {
+  title: string;
+  body: string;
+}
+
+export function createStudentHighlight(token: string, internId: number, params: StudentHighlightInput) {
+  return request<Intern>(`/api/v1/interns/${internId}/student_highlights`, {
+    method: "POST",
+    token,
+    body: JSON.stringify({ student_highlight: params }),
+  });
+}
+
+export function updateStudentHighlight(
+  token: string,
+  internId: number,
+  highlightId: number,
+  params: Partial<StudentHighlightInput>
+) {
+  return request<Intern>(`/api/v1/interns/${internId}/student_highlights/${highlightId}`, {
+    method: "PATCH",
+    token,
+    body: JSON.stringify({ student_highlight: params }),
+  });
+}
+
+export function deleteStudentHighlight(token: string, internId: number, highlightId: number) {
+  return request<Intern>(`/api/v1/interns/${internId}/student_highlights/${highlightId}`, {
+    method: "DELETE",
+    token,
+  });
+}
+
+export function reorderStudentHighlights(token: string, internId: number, orderedIds: number[]) {
+  return request<Intern>(`/api/v1/interns/${internId}/student_highlights/reorder`, {
+    method: "PATCH",
+    token,
+    body: JSON.stringify({ ordered_ids: orderedIds }),
+  });
+}
+
+export interface ConversationParticipant {
   id: number;
   name: string;
-  email: string;
+}
+
+export interface Conversation {
+  id: number;
+  title: string;
+  interns: ConversationParticipant[];
+  participant_count: number;
+  last_activity_at: string;
+  latest_message: {
+    id: number;
+    sender_type: AccountType;
+    sender_name: string | null;
+    body: string;
+    created_at: string;
+  } | null;
+  company?: { id: number; name: string };
 }
 
 export function fetchConversations(token: string) {
-  return request<ConversationPartner[]>("/api/v1/conversations", { token });
+  return request<Conversation[]>("/api/v1/conversations", { token });
 }
 
-export function fetchMessages(
-  token: string,
-  partnerType: AccountType,
-  partnerId: number
-) {
-  const path =
-    partnerType === "intern"
-      ? `/api/v1/interns/${partnerId}/messages`
-      : `/api/v1/companies/${partnerId}/messages`;
-  return request<Message[]>(path, { token });
+export function fetchConversation(token: string, conversationId: number) {
+  return request<Conversation>(`/api/v1/conversations/${conversationId}`, { token });
 }
 
-export function sendMessage(
+export function createConversation(token: string, internIds: number[], title?: string) {
+  return request<Conversation>("/api/v1/conversations", {
+    method: "POST",
+    token,
+    body: JSON.stringify({ intern_ids: internIds, title }),
+  });
+}
+
+export function updateConversation(
   token: string,
-  partnerType: AccountType,
-  partnerId: number,
-  body: string
+  conversationId: number,
+  params: { title?: string; internIds?: number[] }
 ) {
-  const path =
-    partnerType === "intern"
-      ? `/api/v1/interns/${partnerId}/messages`
-      : `/api/v1/companies/${partnerId}/messages`;
-  return request<Message>(path, {
+  return request<Conversation>(`/api/v1/conversations/${conversationId}`, {
+    method: "PATCH",
+    token,
+    body: JSON.stringify({
+      ...(params.title !== undefined ? { title: params.title } : {}),
+      ...(params.internIds !== undefined ? { intern_ids: params.internIds } : {}),
+    }),
+  });
+}
+
+export function fetchMessages(token: string, conversationId: number) {
+  return request<Message[]>(`/api/v1/conversations/${conversationId}/messages`, { token });
+}
+
+export function sendMessage(token: string, conversationId: number, body: string) {
+  return request<Message>(`/api/v1/conversations/${conversationId}/messages`, {
     method: "POST",
     token,
     body: JSON.stringify({ message: { body } }),
@@ -362,6 +442,7 @@ export function fetchJobPostings(search: JobPostingSearchParams = {}) {
   if (search.graduationYear) query.set("graduation_year", String(search.graduationYear));
   if (search.workStyle) query.set("work_style", search.workStyle);
   if (search.jobCategory) query.set("job_category", search.jobCategory);
+  if (search.jobSubcategory) query.set("job_subcategory", search.jobSubcategory);
   if (search.location) query.set("location", search.location);
 
   const qs = query.toString();
@@ -380,7 +461,8 @@ export interface JobPostingInput {
   ends_on?: string | null;
   work_style?: WorkStyle | null;
   location?: string | null;
-  job_category?: JobCategory | null;
+  job_category?: string | null;
+  job_subcategory?: string | null;
   skills?: string[];
 }
 

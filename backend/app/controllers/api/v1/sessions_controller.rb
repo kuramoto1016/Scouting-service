@@ -27,7 +27,9 @@ module Api
 
       def serialize(account)
         if account.is_a?(Intern)
-          StudentProfileSerializer.new(account).as_json
+          intern = Intern.includes(student_profile: %i[student_desired_roles student_skills portfolio_items student_highlights])
+                          .find(account.id)
+          StudentProfileSerializer.new(intern).as_json
         else
           account.as_json(except: %i[password_digest created_at updated_at])
         end
