@@ -59,7 +59,7 @@ export const JOB_TAXONOMY = {
 
 export type JobCategoryKey = keyof typeof JOB_TAXONOMY;
 export type JobSubcategoryKey<C extends JobCategoryKey = JobCategoryKey> =
-  keyof (typeof JOB_TAXONOMY)[C];
+  keyof (typeof JOB_TAXONOMY)[C]["subcategories"];
 
 export const JOB_CATEGORY_KEYS = Object.keys(JOB_TAXONOMY) as JobCategoryKey[];
 
