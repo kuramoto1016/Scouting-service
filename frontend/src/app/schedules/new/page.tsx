@@ -81,6 +81,7 @@ function NewSchedulePageContent() {
   const [title, setTitle] = useState("");
   const [interns, setInterns] = useState<Intern[]>([]);
   const [loadingInterns, setLoadingInterns] = useState(true);
+  const [internLoadError, setInternLoadError] = useState<string | null>(null);
   const [selectedInternIds, setSelectedInternIds] = useState<number[]>([]);
   const [slots, setSlots] = useState<SlotDraft[]>([emptySlot()]);
   const [errors, setErrors] = useState<string[]>([]);
@@ -103,17 +104,39 @@ function NewSchedulePageContent() {
     if (hasInvalidJobId) {
       queueMicrotask(() => {
         setInterns([]);
+        setInternLoadError(null);
         setErrors(["求人IDが不正です"]);
         setLoadingInterns(false);
       });
       return;
     }
 
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) return;
+      setLoadingInterns(true);
+      setInternLoadError(null);
+    });
+
     const loadInterns = jobPostingId ? fetchJobPostingApplicants(token, jobPostingId) : fetchInterns(token);
     loadInterns
-      .then(setInterns)
-      .catch(() => setInterns([]))
-      .finally(() => setLoadingInterns(false));
+      .then((data) => {
+        if (cancelled) return;
+        setInterns(data);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setInterns([]);
+        setInternLoadError(err instanceof ApiError ? err.errors.join(", ") : "学生情報の取得に失敗しました");
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setLoadingInterns(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [token, accountType, jobPostingId, hasInvalidJobId]);
 
   const toggleIntern = (internId: number) => {
@@ -239,7 +262,8 @@ function NewSchedulePageContent() {
         <fieldset className="picker-fieldset">
           <legend>{jobPostingId ? "エントリー済み学生" : "対象の学生"}（{selectedInternIds.length}人選択中）</legend>
           {loadingInterns && <p className="muted">読み込み中...</p>}
-          {!loadingInterns && interns.length === 0 && (
+          {!loadingInterns && internLoadError && <p className="error-text">{internLoadError}</p>}
+          {!loadingInterns && !internLoadError && interns.length === 0 && (
             <p className="muted">
               {jobPostingId ? "この求人にエントリーしている学生がいません。" : "インターン生が見つかりませんでした。"}
             </p>

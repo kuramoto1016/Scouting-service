@@ -17,6 +17,7 @@ export default function JobDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [applyMessage, setApplyMessage] = useState<string | null>(null);
+  const [applyMessageIsError, setApplyMessageIsError] = useState(false);
   const [hasApplied, setHasApplied] = useState(false);
   const [applying, setApplying] = useState(false);
 
@@ -53,17 +54,21 @@ export default function JobDetailPage() {
     if (!token) return;
     if (hasApplied) {
       setApplyMessage("この求人はエントリー済みです。");
+      setApplyMessageIsError(false);
       return;
     }
 
     setApplying(true);
     setApplyMessage(null);
+    setApplyMessageIsError(false);
     try {
       const application = await applyToJobPosting(token, job.id);
       setHasApplied(true);
       setApplyMessage(application.already_applied ? "この求人はエントリー済みです。" : "この求人にエントリーしました。");
+      setApplyMessageIsError(false);
     } catch (err) {
       setApplyMessage(err instanceof ApiError ? err.errors.join(", ") : "エントリーに失敗しました");
+      setApplyMessageIsError(true);
     } finally {
       setApplying(false);
     }
@@ -126,7 +131,7 @@ export default function JobDetailPage() {
               ログインしてエントリーする
             </Link>
           )}
-          {applyMessage && <p className={applyMessage.includes("失敗") ? "error-text" : "muted"}>{applyMessage}</p>}
+          {applyMessage && <p className={applyMessageIsError ? "error-text" : "muted"}>{applyMessage}</p>}
         </div>
       </div>
     </div>

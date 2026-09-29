@@ -2,7 +2,15 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Intern, Conversation, JobPosting, fetchAppliedJobPostings, fetchConversations, fetchJobPostings } from "@/lib/api";
+import {
+  Intern,
+  Conversation,
+  JobPosting,
+  ApiError,
+  fetchAppliedJobPostings,
+  fetchConversations,
+  fetchJobPostings,
+} from "@/lib/api";
 import { ProfileSidebar } from "@/components/ProfileSidebar";
 import { JobPostingCard } from "@/components/JobPostingCard";
 import { SECTION_LABELS } from "@/lib/profile-labels";
@@ -23,6 +31,7 @@ export function StudentHome({ intern, token }: { intern: Intern; token: string }
   const [loadingConversations, setLoadingConversations] = useState(true);
   const [loadingJobPostings, setLoadingJobPostings] = useState(true);
   const [loadingAppliedJobPostings, setLoadingAppliedJobPostings] = useState(true);
+  const [appliedJobPostingsError, setAppliedJobPostingsError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -72,10 +81,13 @@ export function StudentHome({ intern, token }: { intern: Intern; token: string }
       .then((res) => {
         if (cancelled) return;
         setAppliedJobPostings(res.job_postings);
+        setAppliedJobPostingsError(null);
       })
-      .catch(() => {
+      .catch((err) => {
         if (cancelled) return;
-        setAppliedJobPostings([]);
+        setAppliedJobPostingsError(
+          err instanceof ApiError ? err.errors.join(", ") : "エントリー済み募集の取得に失敗しました"
+        );
       })
       .finally(() => {
         if (cancelled) return;
@@ -125,7 +137,10 @@ export function StudentHome({ intern, token }: { intern: Intern; token: string }
               </Link>
             </div>
             {loadingAppliedJobPostings && <p className="muted">読み込み中...</p>}
-            {!loadingAppliedJobPostings && appliedJobPostings.length === 0 && (
+            {!loadingAppliedJobPostings && appliedJobPostingsError && (
+              <p className="error-text">{appliedJobPostingsError}</p>
+            )}
+            {!loadingAppliedJobPostings && !appliedJobPostingsError && appliedJobPostings.length === 0 && (
               <p className="muted">まだエントリーした募集がありません。</p>
             )}
             {appliedJobPostings.length > 0 && (

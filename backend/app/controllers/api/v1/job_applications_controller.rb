@@ -40,6 +40,9 @@ module Api
         else
           render_validation_errors(application.errors)
         end
+      rescue ActiveRecord::RecordNotUnique
+        existing_application = @job_posting.job_applications.find_by!(intern: current_account)
+        render json: application_json(existing_application).merge(already_applied: true), status: :ok
       end
 
       private

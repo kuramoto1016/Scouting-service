@@ -51,6 +51,8 @@ module Api
         else
           render_validation_errors(schedule.errors)
         end
+      rescue ActiveRecord::RecordNotFound
+        render json: { error: "指定された求人が見つかりません" }, status: :not_found
       end
 
       # PATCH /api/v1/schedules/:id/confirm (company only, owner)
